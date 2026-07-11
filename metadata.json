@@ -1,0 +1,6 @@
+{
+  "name": "Simulink 101",
+  "description": "An IEEE Power Electronics Society simulation challenge leaderboard and team telemetry tracker.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

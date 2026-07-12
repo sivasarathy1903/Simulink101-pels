@@ -35,10 +35,27 @@ import { supabase } from "./lib/supabase";
 import LeaderboardTable from "./components/LeaderboardTable";
 import TeamTelemetryDetails from "./components/TeamTelemetryDetails";
 
+interface EventConfig {
+  task1Released: boolean;
+  task1Link: string;
+  task2Released: boolean;
+  task2Link: string;
+  task3Released: boolean;
+  task3Link: string;
+}
+
 export default function App() {
   const [currentTab, setCurrentTab] = useState<"home" | "leaderboard">("home");
   const { teams, loading: teamsLoading, error: teamsError, refetch: refetchTeams } = useTeams();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+
+  // Selected Task to show details in submission modal
+  const [selectedTask, setSelectedTask] = useState<{
+    title: string;
+    released: boolean;
+    link: string;
+    description: string;
+  } | null>(null);
 
   // Auth States
   const [currentUser, setCurrentUser] = useState<{ role: "admin" | "team" | "viewer"; teamId?: string; name?: string }>({
@@ -49,8 +66,6 @@ export default function App() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
-
-
 
   // Load user session on mount
   useEffect(() => {
@@ -102,7 +117,7 @@ export default function App() {
         const emailToUse = cleanUser === "admin" ? "admin@simulink101.com" : cleanUser;
         const { error } = await supabase.auth.signInWithPassword({
           email: emailToUse,
-          password: loginPassword, // use original case for pass
+          password: loginPassword,
         });
         
         if (error) {
@@ -110,8 +125,7 @@ export default function App() {
             setLoginError(error.message);
             return;
           }
-          // If they just typed "admin", maybe let it fall through or show error.
-          setLoginError("Incorrect admin credentials (Supabase Auth).");
+          setLoginError("Incorrect admin credentials.");
           return;
         }
 
@@ -137,7 +151,6 @@ export default function App() {
     });
 
     if (matchingTeam) {
-      // Expected password: "lowercase_teamname_without_spaces" + "123"
       const expectedPass = matchingTeam.name.replace(/\s+/g, "").toLowerCase() + "123";
       if (cleanPass === expectedPass) {
         const teamUser = { role: "team" as const, teamId: matchingTeam.id, name: matchingTeam.name };
@@ -152,7 +165,7 @@ export default function App() {
         }, 1000);
         return;
       } else {
-        setLoginError(`Incorrect password for team "${matchingTeam.name}". Password format is: lowercase teamname with no spaces + "123" (e.g. "${matchingTeam.name.replace(/\s+/g, "").toLowerCase()}123").`);
+        setLoginError(`Incorrect password. Password format is: lowercase teamname without spaces + "123".`);
         return;
       }
     }
@@ -170,43 +183,29 @@ export default function App() {
     setSelectedTeam(null);
   };
 
-
-
   // Add a newly registered team directly from Leaderboard
   const handleRegisterTeam = async (newTeamData: {
     name: string;
     institution: string;
-    modelDesign: number;
-    simulationAccuracy: number;
-    systemPerformance: number;
-    innovation: number;
-    technicalApproach: number;
-    resultAnalysis: number;
-    presentation: number;
+    circuitDesign: number;
+    reportSubmission: number;
+    result: number;
     tags: string[];
   }) => {
     const totalPoints =
-      newTeamData.modelDesign +
-      newTeamData.simulationAccuracy +
-      newTeamData.systemPerformance +
-      newTeamData.innovation +
-      newTeamData.technicalApproach +
-      newTeamData.resultAnalysis +
-      newTeamData.presentation;
+      newTeamData.circuitDesign +
+      newTeamData.reportSubmission +
+      newTeamData.result;
 
     const newTeam = {
       name: newTeamData.name,
       institution: newTeamData.institution,
       totalPoints,
-      status: "Telemetry calibrated. Controller gains within optimal boundaries.",
+      status: "Calibrated",
       metrics: {
-        modelDesign: newTeamData.modelDesign,
-        simulationAccuracy: newTeamData.simulationAccuracy,
-        systemPerformance: newTeamData.systemPerformance,
-        innovation: newTeamData.innovation,
-        technicalApproach: newTeamData.technicalApproach,
-        resultAnalysis: newTeamData.resultAnalysis,
-        presentation: newTeamData.presentation,
+        circuitDesign: newTeamData.circuitDesign,
+        reportSubmission: newTeamData.reportSubmission,
+        result: newTeamData.result,
       },
       runHistory: [
         { run: 1, score: Math.round(totalPoints * 0.8) },
@@ -218,26 +217,20 @@ export default function App() {
 
     try {
       await teamService.createTeam(newTeam);
-      // Supabase realtime will fetch it
     } catch (err) {
       console.error(err);
       alert("Failed to create team.");
     }
   };
 
-  // Handle score adjusters in telemetry details screen
+  // Handle manual marks updates in details screen
   const handleUpdateMetrics = async (teamId: string, updatedMetrics: Team["metrics"]) => {
     try {
       await teamService.updateTeamScores(teamId, updatedMetrics);
-      // Let realtime update the selected team if needed, but we can optimistically update
       const totalPoints =
-        updatedMetrics.modelDesign +
-        updatedMetrics.simulationAccuracy +
-        updatedMetrics.systemPerformance +
-        updatedMetrics.innovation +
-        updatedMetrics.technicalApproach +
-        updatedMetrics.resultAnalysis +
-        updatedMetrics.presentation;
+        (updatedMetrics.circuitDesign || 0) +
+        (updatedMetrics.reportSubmission || 0) +
+        (updatedMetrics.result || 0);
         
       setSelectedTeam(prev => prev && prev.id === teamId ? {
         ...prev,
@@ -250,22 +243,7 @@ export default function App() {
     }
   };
 
-  // Delete a team (since reset challenge is removed/replaced with delete capability if needed, or we just keep a manual delete here)
-  const handleDeleteTeam = async (teamId: string) => {
-    if (window.confirm("Are you sure you want to delete this team?")) {
-      try {
-        await teamService.deleteTeam(teamId);
-        if (selectedTeam?.id === teamId) {
-          setSelectedTeam(null);
-        }
-      } catch(err) {
-        console.error(err);
-        alert("Failed to delete team");
-      }
-    }
-  };
-  
-  // Seed initial dataset (since old reset behavior was just clearing localstorage)
+  // Reset/Seed initial database
   const handleResetChallenge = async () => {
     if (window.confirm("This will add the default teams to Supabase. Proceed?")) {
       for (const t of INITIAL_TEAMS) {
@@ -280,6 +258,36 @@ export default function App() {
       section.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  // Parse event configuration from special team __EVENT_CONFIG__
+  const configTeam = teams.find(t => t.name === "__EVENT_CONFIG__");
+  const task1Released = configTeam?.metrics?.task1Released ?? false;
+  const task2Released = configTeam?.metrics?.task2Released ?? false;
+  const task3Released = configTeam?.metrics?.task3Released ?? false;
+  const task1Link = configTeam?.metrics?.task1Link ?? "";
+  const task2Link = configTeam?.metrics?.task2Link ?? "";
+  const task3Link = configTeam?.metrics?.task3Link ?? "";
+
+  const handleUpdateConfig = async (newConfig: any) => {
+    try {
+      if (configTeam) {
+        await teamService.updateTeamScores(configTeam.id, newConfig);
+      } else {
+        await teamService.createTeam({
+          name: "__EVENT_CONFIG__",
+          institution: "SYSTEM",
+          totalPoints: 0,
+          status: "CONFIG",
+          metrics: newConfig,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Filter out config team from normal lists
+  const filteredTeams = teams.filter(t => t.name !== "__EVENT_CONFIG__");
 
   return (
     <div className="bg-[#0A0A0A] text-white engineering-grid min-h-screen selection:bg-primary-red selection:text-white flex flex-col justify-between overflow-x-hidden">
@@ -299,8 +307,8 @@ export default function App() {
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhT7QIUE14McBjVbaSVgLbQU9Rskq807b4yTeIq433ZYqnXk0jH5wCkIHv7aFintnvmMEPMB8U6dzNDoCltxJIlTa1QfcbTFv-BMzBuvE-m-GH5LG8dcz-njxhfytuRde4mq-BPrltR_gDGpVQ7dZuCNEtLZy3K7ttEPoq6_sas0yedeCB344eHCiEQx9EOWuuiE-CXTRnBmGJqnhwcoFV2fUFiWM_YObS8Q1g-wvE74BsUdQU2Ic2Xg-kKlB3ZqJj3uA"
             />
             <div className="flex flex-col">
-              <span className="font-display font-black text-lg text-white leading-none tracking-tight group-hover:text-primary-red transition-colors">
-                SIMULINK 101
+              <span className="font-display font-black text-lg text-white leading-none tracking-tight group-hover:text-primary-red transition-colors uppercase">
+                SIMVERSE
               </span>
               <span className="font-mono text-[9px] text-white/40 tracking-wider">
                 IEEE POWER ELECTRONICS SOCIETY
@@ -333,7 +341,7 @@ export default function App() {
             {currentUser.role === "team" && (
               <button
                 onClick={() => {
-                  const myTeam = teams.find(t => t.id === currentUser.teamId);
+                  const myTeam = filteredTeams.find(t => t.id === currentUser.teamId);
                   if (myTeam) {
                     setSelectedTeam(myTeam);
                     setCurrentTab("leaderboard");
@@ -352,7 +360,6 @@ export default function App() {
 
           {/* Authentication & Admin controls */}
           <div className="flex items-center gap-3">
-            {/* Active Session Status badge */}
             {currentUser.role === "admin" && (
               <div className="hidden sm:flex items-center gap-1.5 bg-primary-red/10 border border-primary-red/30 px-2.5 py-1 rounded-sm font-mono text-[10px] text-primary-red">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-red animate-ping" />
@@ -369,7 +376,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Admin only: Reset DB */}
             {currentUser.role === "admin" && (
               <button
                 onClick={handleResetChallenge}
@@ -380,12 +386,10 @@ export default function App() {
               </button>
             )}
 
-            {/* Log in / Log out main action */}
             {currentUser.role !== "viewer" ? (
               <button
                 onClick={handleLogout}
                 className="font-mono text-[10px] font-bold text-white/70 hover:text-primary-red border border-white/10 hover:border-primary-red/25 bg-white/5 px-3 py-1.5 rounded-sm flex items-center gap-1.5 transition-all cursor-pointer"
-                title="Log out of system"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 <span className="hidden xs:inline">LOG OUT</span>
@@ -412,7 +416,6 @@ export default function App() {
       <main className="flex-grow pt-12">
         <AnimatePresence mode="wait">
           
-          {/* Selected Team Details View Override */}
           {selectedTeam ? (
             <motion.div
               key="team-details"
@@ -478,7 +481,7 @@ export default function App() {
                     />
                   </div>
 
-                  {/* High-Fidelity Interactive Block Diagram & Flowing Electric Signal Waves */}
+                  {/* High-Fidelity SVG Electric Signal Waves */}
                   <svg className="absolute inset-0 w-full h-full opacity-60 hidden lg:block" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <linearGradient id="glow-grad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -488,7 +491,6 @@ export default function App() {
                       </linearGradient>
                     </defs>
 
-                    {/* Circuit Waveform Path 1 (Top Left Sine Sweep) */}
                     <path
                       d="M -100 200 Q 150 120 400 250 T 900 200 T 1400 300 T 2000 150"
                       fill="none"
@@ -509,94 +511,10 @@ export default function App() {
                         repeatCount="indefinite"
                       />
                     </path>
-
-                    {/* Circuit Waveform Path 2 (Closed Feedback Loop Bottom Right) */}
-                    <path
-                      d="M -50 550 C 300 450, 600 680, 1100 520 S 1600 400, 2100 580"
-                      fill="none"
-                      stroke="rgba(255,255,255,0.02)"
-                      strokeWidth="2.5"
-                    />
-                    <path
-                      d="M -50 550 C 300 450, 600 680, 1100 520 S 1600 400, 2100 580"
-                      fill="none"
-                      stroke="rgba(227, 30, 36, 0.4)"
-                      strokeWidth="3"
-                      strokeDasharray="100, 400"
-                    >
-                      <animate
-                        attributeName="stroke-dashoffset"
-                        values="0; 500"
-                        dur="8s"
-                        repeatCount="indefinite"
-                      />
-                    </path>
                   </svg>
-
-                  {/* Interconnected floating block diagram nodes */}
-                  <div className="absolute inset-0 z-10 pointer-events-none hidden lg:block">
-                    
-                    {/* Node 1: SINE WAVE generator */}
-                    <motion.div 
-                      initial={{ opacity: 0, x: -40 }}
-                      animate={{ opacity: 0.65, x: 0 }}
-                      transition={{ delay: 0.5, duration: 0.8 }}
-                      className="absolute top-[28%] left-[10%] glass-panel border border-white/10 w-44 p-3 rounded-sm flex items-center gap-3"
-                    >
-                      <div className="h-7 w-7 rounded bg-primary-red/10 border border-primary-red/20 flex items-center justify-center">
-                        <Activity className="h-4 w-4 text-primary-red animate-pulse" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-mono text-[8px] text-white/40 block leading-none font-bold">SOURCE_01</span>
-                        <span className="font-mono text-xs text-white">SINE WAVE SIG</span>
-                      </div>
-                    </motion.div>
-
-                    {/* Node 2: CLOSED LOOP PID */}
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 0.75, scale: 1 }}
-                      transition={{ delay: 0.7, duration: 0.8 }}
-                      className="absolute top-[21%] left-[38%] glass-panel border border-primary-red/20 shadow-md shadow-primary-red/5 w-48 p-3 rounded-sm flex items-center gap-3"
-                    >
-                      <div className="h-7 w-7 rounded bg-primary-red/20 border border-primary-red/40 flex items-center justify-center">
-                        <Cpu className="h-4 w-4 text-primary-red" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-mono text-[8px] text-primary-red font-bold uppercase tracking-wide">PID_GAINS [ACTIVE]</span>
-                        <span className="font-mono text-xs text-white">CLOSED_LOOP_SYS</span>
-                      </div>
-                    </motion.div>
-
-                    {/* Node 3: INVERTER PLANT */}
-                    <motion.div 
-                      initial={{ opacity: 0, x: 40 }}
-                      animate={{ opacity: 0.65, x: 0 }}
-                      transition={{ delay: 0.9, duration: 0.8 }}
-                      className="absolute top-[48%] right-[14%] glass-panel border border-white/10 w-48 p-3 rounded-sm flex items-center gap-3"
-                    >
-                      <div className="h-7 w-7 rounded bg-white/5 border border-white/10 flex items-center justify-center">
-                        <Zap className="h-4 w-4 text-yellow-400" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-mono text-[8px] text-white/40 block leading-none font-bold">LCL CONVERTER</span>
-                        <span className="font-mono text-xs text-white">INVERTER_PLANT</span>
-                      </div>
-                    </motion.div>
-
-                    {/* Direct signal line connecting pulse */}
-                    <div className="absolute top-[calc(28%+16px)] left-[calc(10%+176px)] w-[16vw] h-0.5 bg-white/10">
-                      <div className="absolute top-0 h-full w-12 bg-gradient-to-r from-transparent via-primary-red to-transparent animate-pulse-signal" style={{ animation: "pulse-signal 3s infinite linear" }} />
-                    </div>
-
-                    <div className="absolute top-[calc(21%+24px)] left-[calc(38%+192px)] w-[26vw] h-0.5 bg-white/10 transform rotate-12 origin-left">
-                      <div className="absolute top-0 h-full w-12 bg-gradient-to-r from-transparent via-primary-red to-transparent" style={{ animation: "pulse-signal 4s infinite linear", animationDelay: "1.5s" }} />
-                    </div>
-
-                  </div>
                 </div>
 
-                {/* Center Hero PELS Logo & Text */}
+                {/* Center Hero Logo & Trendy Uppercase Goofy Animation Text */}
                 <div className="relative z-20 text-center flex flex-col items-center max-w-4xl mt-6 px-4">
                   <motion.div 
                     initial={{ scale: 0.85, opacity: 0 }}
@@ -611,14 +529,29 @@ export default function App() {
                     />
                   </motion.div>
 
-                  <motion.h1 
-                    initial={{ y: 25, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2, duration: 0.7, ease: "easeOut" }}
-                    className="font-display font-black text-5xl md:text-[88px] text-white tracking-tighter leading-none mb-6 drop-shadow-2xl"
-                  >
-                    SIMULINK 101
-                  </motion.h1>
+                  {/* Trendy Goofy Wavy SIMVERSE Header Text */}
+                  <div className="flex justify-center gap-1.5 md:gap-3 select-none mb-6">
+                    {"SIMVERSE".split("").map((char, index) => (
+                      <motion.span
+                        key={index}
+                        className="font-display font-black text-6xl md:text-[96px] text-white tracking-tighter leading-none inline-block drop-shadow-[0_0_15px_rgba(227,30,36,0.6)]"
+                        animate={{
+                          y: [0, -18, 0],
+                          rotate: [0, index % 2 === 0 ? 8 : -8, 0],
+                          color: ["#FFFFFF", "#E31E24", "#FFFFFF"],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                          delay: index * 0.15,
+                          ease: "easeInOut",
+                        }}
+                      >
+                        {char}
+                      </motion.span>
+                    ))}
+                  </div>
 
                   <motion.p 
                     initial={{ y: 20, opacity: 0 }}
@@ -662,16 +595,15 @@ export default function App() {
                 </div>
               </section>
 
-              {/* Overview Section: Master the Simulation */}
+              {/* Overview Section: Phase to challenge */}
               <section id="master-simulation-section" className="py-24 px-6 md:px-12 bg-[#0A0A0A] relative z-10 border-t border-white/5 scroll-mt-12">
                 <div className="max-w-[1440px] mx-auto">
                   
-                  {/* Title Header with viewing link */}
                   <div className="flex flex-col md:flex-row items-end justify-between mb-12 border-b border-white/10 pb-6">
                     <div>
-                      <span className="font-mono text-xs text-primary-red block mb-2 uppercase tracking-widest font-bold">INITIALIZATION SEQUENCE</span>
+                      <span className="font-mono text-xs text-primary-red block mb-2 uppercase tracking-widest font-bold">CHALLENGE TRACK</span>
                       <h2 className="font-display font-extrabold text-3xl md:text-5xl text-white tracking-tight">
-                        MASTER THE CHALLENGE
+                        Phase to challenge
                       </h2>
                     </div>
                     <button 
@@ -682,121 +614,238 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Bento Grid layout */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Admin Event controls */}
+                  {currentUser.role === "admin" && (
+                    <div className="glass-panel p-6 rounded-lg border-primary-red/30 mb-12 max-w-4xl mx-auto">
+                      <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-2">
+                        <Sliders className="h-5 w-5 text-primary-red" />
+                        <h3 className="font-mono text-xs font-bold uppercase text-white">SIMVERSE EVENT CONTROLS (ADMIN)</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Task 1 Control */}
+                        <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/10 rounded">
+                          <span className="font-mono text-xs text-white/70">TASK 1 CONTROL</span>
+                          <label className="flex items-center gap-2 cursor-pointer font-mono text-xs text-white">
+                            <input
+                              type="checkbox"
+                              checked={task1Released}
+                              onChange={async (e) => {
+                                await handleUpdateConfig({
+                                  ...configTeam?.metrics,
+                                  task1Released: e.target.checked
+                                });
+                              }}
+                              className="accent-primary-red"
+                            />
+                            RELEASE TASK 1
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Drive Link for Task 1"
+                            value={task1Link}
+                            onChange={async (e) => {
+                              await handleUpdateConfig({
+                                ...configTeam?.metrics,
+                                task1Link: e.target.value
+                              });
+                            }}
+                            className="bg-[#0A0A0A] border border-white/10 text-xs px-2 py-1.5 rounded outline-none focus:border-primary-red text-white"
+                          />
+                        </div>
+
+                        {/* Task 2 Control */}
+                        <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/10 rounded">
+                          <span className="font-mono text-xs text-white/70">TASK 2 CONTROL</span>
+                          <label className="flex items-center gap-2 cursor-pointer font-mono text-xs text-white">
+                            <input
+                              type="checkbox"
+                              checked={task2Released}
+                              onChange={async (e) => {
+                                await handleUpdateConfig({
+                                  ...configTeam?.metrics,
+                                  task2Released: e.target.checked
+                                });
+                              }}
+                              className="accent-primary-red"
+                            />
+                            RELEASE TASK 2
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Drive Link for Task 2"
+                            value={task2Link}
+                            onChange={async (e) => {
+                              await handleUpdateConfig({
+                                ...configTeam?.metrics,
+                                task2Link: e.target.value
+                              });
+                            }}
+                            className="bg-[#0A0A0A] border border-white/10 text-xs px-2 py-1.5 rounded outline-none focus:border-primary-red text-white"
+                          />
+                        </div>
+
+                        {/* Task 3 Control */}
+                        <div className="flex flex-col gap-3 p-4 bg-white/5 border border-white/10 rounded">
+                          <span className="font-mono text-xs text-white/70">TASK 3 CONTROL</span>
+                          <label className="flex items-center gap-2 cursor-pointer font-mono text-xs text-white">
+                            <input
+                              type="checkbox"
+                              checked={task3Released}
+                              onChange={async (e) => {
+                                await handleUpdateConfig({
+                                  ...configTeam?.metrics,
+                                  task3Released: e.target.checked
+                                });
+                              }}
+                              className="accent-primary-red"
+                            />
+                            RELEASE TASK 3
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Drive Link for Task 3"
+                            value={task3Link}
+                            onChange={async (e) => {
+                              await handleUpdateConfig({
+                                ...configTeam?.metrics,
+                                task3Link: e.target.value
+                              });
+                            }}
+                            className="bg-[#0A0A0A] border border-white/10 text-xs px-2 py-1.5 rounded outline-none focus:border-primary-red text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Three task cards grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     
-                    {/* Card 1: Module 01 */}
-                    <div className="glass-panel rounded-lg p-6 relative group transition-all duration-500 overflow-hidden min-h-[260px] flex flex-col justify-between border border-white/10">
+                    {/* Card 1: Task 1 */}
+                    <motion.div
+                      whileHover={task1Released ? { y: -6 } : {}}
+                      onClick={() => {
+                        if (task1Released) {
+                          setSelectedTask({
+                            title: "Task 1: Circuit Design",
+                            released: true,
+                            link: task1Link,
+                            description: "Build the primary converter and feedback loop to stabilize grid voltage output."
+                          });
+                        }
+                      }}
+                      className={`glass-panel rounded-lg p-6 relative group transition-all duration-500 overflow-hidden min-h-[260px] flex flex-col justify-between border cursor-pointer ${
+                        task1Released ? "border-primary-red/30 hover:border-primary-red" : "border-white/5 opacity-50 select-none"
+                      }`}
+                    >
                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
-                        <GitFork className="h-32 w-32 text-white" />
+                        <Zap className="h-32 w-32 text-white" />
                       </div>
                       
-                      <div className="font-mono text-xs text-primary-red mb-auto flex items-center gap-2">
-                        <span className="w-2 h-2 bg-primary-red rounded-full"></span>
-                        MODULE 01
+                      <div className="font-mono text-xs text-primary-red mb-auto flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-primary-red rounded-full"></span>
+                          TASK 1
+                        </span>
+                        {task1Released ? (
+                          <span className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded">RELEASED</span>
+                        ) : (
+                          <span className="text-xs text-red-500 bg-red-500/10 px-2 py-0.5 rounded flex items-center gap-1"><Lock className="h-3 w-3" /> LOCKED</span>
+                        )}
                       </div>
                       
                       <div className="mt-8">
-                        <Network className="h-8 w-8 text-white mb-3" />
-                        <h3 className="font-sans font-bold text-lg text-white mb-1">Simulation Challenge</h3>
+                        <Cpu className="h-8 w-8 text-white mb-3" />
+                        <h3 className="font-sans font-bold text-lg text-white mb-1">Circuit Design</h3>
                         <p className="font-mono text-xs text-white/60 leading-relaxed">
-                          Complex topology modeling and rapid transient analysis under strict time constraints.
+                          Build the primary converter and feedback loop to stabilize grid voltage output.
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Card 2: Module 02 */}
-                    <div className="glass-panel rounded-lg p-6 relative group transition-all duration-500 overflow-hidden min-h-[260px] flex flex-col justify-between border border-white/10">
+                    {/* Card 2: Task 2 */}
+                    <motion.div
+                      whileHover={task2Released ? { y: -6 } : {}}
+                      onClick={() => {
+                        if (task2Released) {
+                          setSelectedTask({
+                            title: "Task 2: Simulation Accuracy",
+                            released: true,
+                            link: task2Link,
+                            description: "Optimize dynamic filters and parameters to achieve near-zero voltage distortion."
+                          });
+                        }
+                      }}
+                      className={`glass-panel rounded-lg p-6 relative group transition-all duration-500 overflow-hidden min-h-[260px] flex flex-col justify-between border cursor-pointer ${
+                        task2Released ? "border-primary-red/30 hover:border-primary-red" : "border-white/5 opacity-50 select-none"
+                      }`}
+                    >
                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
-                        <Cpu className="h-32 w-32 text-white" />
+                        <Activity className="h-32 w-32 text-white" />
                       </div>
-
-                      <div className="font-mono text-xs text-white/50 mb-auto flex items-center gap-2 group-hover:text-primary-red transition-colors">
-                        <span className="w-2 h-2 bg-white/40 group-hover:bg-primary-red transition-colors rounded-full"></span>
-                        MODULE 02
+                      
+                      <div className="font-mono text-xs text-primary-red mb-auto flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-primary-red rounded-full"></span>
+                          TASK 2
+                        </span>
+                        {task2Released ? (
+                          <span className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded">RELEASED</span>
+                        ) : (
+                          <span className="text-xs text-red-500 bg-red-500/10 px-2 py-0.5 rounded flex items-center gap-1"><Lock className="h-3 w-3" /> LOCKED</span>
+                        )}
                       </div>
-
+                      
                       <div className="mt-8">
-                        <Wrench className="h-8 w-8 text-white mb-3" />
-                        <h3 className="font-sans font-bold text-lg text-white mb-1">Engineering Thinking</h3>
+                        <Gauge className="h-8 w-8 text-white mb-3" />
+                        <h3 className="font-sans font-bold text-lg text-white mb-1">Simulation Accuracy</h3>
                         <p className="font-mono text-xs text-white/60 leading-relaxed">
-                          Analytical problem solving mirroring real-world power converter design dilemmas.
+                          Optimize dynamic filters and parameters to achieve near-zero voltage distortion.
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Card 3: Metrics_Sys (Double width card) */}
-                    <div className="glass-panel rounded-lg p-6 relative group transition-all duration-500 overflow-hidden min-h-[260px] flex flex-col lg:col-span-2 justify-between border border-white/10 bg-gradient-to-br from-white/[0.015] to-transparent">
+                    {/* Card 3: Task 3 */}
+                    <motion.div
+                      whileHover={task3Released ? { y: -6 } : {}}
+                      onClick={() => {
+                        if (task3Released) {
+                          setSelectedTask({
+                            title: "Task 3: Results Submission",
+                            released: true,
+                            link: task3Link,
+                            description: "Submit final transient performance data and comprehensive evaluation report."
+                          });
+                        }
+                      }}
+                      className={`glass-panel rounded-lg p-6 relative group transition-all duration-500 overflow-hidden min-h-[260px] flex flex-col justify-between border cursor-pointer ${
+                        task3Released ? "border-primary-red/30 hover:border-primary-red" : "border-white/5 opacity-50 select-none"
+                      }`}
+                    >
+                      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
+                        <FileCheck className="h-32 w-32 text-white" />
+                      </div>
                       
-                      <div className="font-mono text-xs text-white/50 mb-auto flex items-center gap-2 group-hover:text-primary-red transition-colors">
-                        <span className="w-2 h-2 bg-white/40 group-hover:bg-primary-red transition-colors rounded-full"></span>
-                        METRICS_SYS
+                      <div className="font-mono text-xs text-primary-red mb-auto flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-primary-red rounded-full"></span>
+                          TASK 3
+                        </span>
+                        {task3Released ? (
+                          <span className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded">RELEASED</span>
+                        ) : (
+                          <span className="text-xs text-red-500 bg-red-500/10 px-2 py-0.5 rounded flex items-center gap-1"><Lock className="h-3 w-3" /> LOCKED</span>
+                        )}
                       </div>
-
-                      <div className="mt-8 flex flex-col md:flex-row gap-6 justify-between items-end">
-                        <div className="max-w-xs">
-                          <CheckSquare className="h-8 w-8 text-white mb-3" />
-                          <h3 className="font-sans font-bold text-lg text-white mb-1">Category-Based Scoring</h3>
-                          <p className="font-mono text-xs text-white/60 leading-relaxed">
-                            Precision, efficiency, and robustness are evaluated independently for comprehensive ranking.
-                          </p>
-                        </div>
-
-                        {/* Interactive telemetry bar visualizer */}
-                        <div className="flex flex-col gap-2.5 w-full md:w-1/2">
-                          
-                          {/* Accuracy Bar */}
-                          <div className="flex items-center gap-3">
-                            <span className="font-mono text-[10px] text-white/50 w-8">ACC</span>
-                            <div className="flex-grow h-2.5 bg-white/10 flex gap-[1.5px] p-[1.5px] rounded-sm">
-                              {Array.from({ length: 10 }).map((_, i) => (
-                                <div
-                                  key={i}
-                                  className={`h-full flex-1 rounded-[1px] ${
-                                    i < 8 ? "bg-primary-red shadow-sm" : "bg-white/10"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <span className="font-mono text-[10px] text-primary-red font-bold w-6 text-right">80%</span>
-                          </div>
-
-                          {/* Speed Bar */}
-                          <div className="flex items-center gap-3">
-                            <span className="font-mono text-[10px] text-white/50 w-8">SPD</span>
-                            <div className="flex-grow h-2.5 bg-white/10 flex gap-[1.5px] p-[1.5px] rounded-sm">
-                              {Array.from({ length: 10 }).map((_, i) => (
-                                <div
-                                  key={i}
-                                  className={`h-full flex-1 rounded-[1px] ${
-                                    i < 6 ? "bg-primary-red shadow-sm" : "bg-white/10"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <span className="font-mono text-[10px] text-primary-red font-bold w-6 text-right">60%</span>
-                          </div>
-
-                          {/* Efficiency Bar */}
-                          <div className="flex items-center gap-3">
-                            <span className="font-mono text-[10px] text-white/50 w-8">EFF</span>
-                            <div className="flex-grow h-2.5 bg-white/10 flex gap-[1.5px] p-[1.5px] rounded-sm">
-                              {Array.from({ length: 10 }).map((_, i) => (
-                                <div
-                                  key={i}
-                                  className={`h-full flex-1 rounded-[1px] ${
-                                    i < 9 ? "bg-primary-red shadow-sm" : "bg-white/10"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <span className="font-mono text-[10px] text-primary-red font-bold w-6 text-right">90%</span>
-                          </div>
-
-                        </div>
+                      
+                      <div className="mt-8">
+                        <Sparkles className="h-8 w-8 text-white mb-3" />
+                        <h3 className="font-sans font-bold text-lg text-white mb-1">Results & Report</h3>
+                        <p className="font-mono text-xs text-white/60 leading-relaxed">
+                          Submit final transient performance data and comprehensive evaluation report.
+                        </p>
                       </div>
-
-                    </div>
+                    </motion.div>
 
                   </div>
                 </div>
@@ -812,7 +861,7 @@ export default function App() {
               transition={{ duration: 0.3 }}
             >
               <LeaderboardTable
-                teams={teams}
+                teams={filteredTeams}
                 onSelectTeam={(team) => setSelectedTeam(team)}
                 onRegisterTeam={handleRegisterTeam}
                 isAdmin={currentUser.role === "admin"}
@@ -827,7 +876,7 @@ export default function App() {
       <footer className="w-full py-10 bg-black border-t border-white/10 mt-16 font-mono text-[11px] text-white/40">
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-white font-bold tracking-widest flex items-center gap-2">
-            SIMULINK 101 <span className="text-[9px] font-mono text-primary-red font-normal bg-primary-red/10 border border-primary-red/20 px-1.5 py-0.5 rounded">v2.0</span>
+            SIMVERSE <span className="text-[9px] font-mono text-primary-red font-normal bg-primary-red/10 border border-primary-red/20 px-1.5 py-0.5 rounded">v1.0</span>
           </div>
           <div className="text-center md:text-left">
             © 2026 IEEE Power Electronics Society. All technical rights reserved.
@@ -846,7 +895,6 @@ export default function App() {
       <AnimatePresence>
         {isLoginModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -857,7 +905,6 @@ export default function App() {
               className="absolute inset-0 bg-black/85 backdrop-blur-md"
             />
 
-            {/* Modal Body */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -877,13 +924,10 @@ export default function App() {
                 <div className="h-10 w-10 bg-primary-red/15 border border-primary-red/30 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Lock className="h-5 w-5 text-primary-red" />
                 </div>
-                <span className="font-mono text-[9px] text-primary-red uppercase tracking-widest font-bold">WELCOME TO SIMULINK 101</span>
+                <span className="font-mono text-[9px] text-primary-red uppercase tracking-widest font-bold font-bold">WELCOME TO SIMVERSE</span>
                 <h3 className="font-display font-extrabold text-xl text-white mt-1">
                   SECURE SIGN IN
                 </h3>
-                <p className="font-mono text-[10px] text-white/50 mt-1">
-                  Access the leaderboards and team metrics securely.
-                </p>
               </div>
 
               {loginSuccess ? (
@@ -896,9 +940,6 @@ export default function App() {
                     <UserCheck className="h-6 w-6 text-green-400" />
                   </div>
                   <h4 className="font-sans font-bold text-white text-base">AUTHENTICATION SUCCESSFUL</h4>
-                  <p className="font-mono text-xs text-white/60 mt-1">
-                    Establishing secure simulation link...
-                  </p>
                 </motion.div>
               ) : (
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
@@ -955,6 +996,76 @@ export default function App() {
                   </button>
                 </form>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Task Submission Modal */}
+      <AnimatePresence>
+        {selectedTask && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedTask(null)}
+              className="absolute inset-0 bg-black/85 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md glass-panel border border-white/10 rounded p-8 z-10 text-center"
+            >
+              <button
+                onClick={() => setSelectedTask(null)}
+                className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="h-12 w-12 bg-primary-red/15 border border-primary-red/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="h-6 w-6 text-primary-red" />
+              </div>
+
+              <span className="font-mono text-[9px] text-primary-red uppercase tracking-widest font-bold">SUBMISSION PORTAL</span>
+              <h3 className="font-display font-extrabold text-2xl text-white mt-1 uppercase">
+                {selectedTask.title}
+              </h3>
+              
+              <p className="font-mono text-xs text-white/60 mt-3 max-w-sm mx-auto leading-relaxed">
+                {selectedTask.description}
+              </p>
+
+              <div className="my-6 p-4 bg-white/5 border border-white/5 rounded-sm">
+                <div className="text-sm text-white font-medium flex items-center justify-center gap-2">
+                  <span>Get through this button to submit your work in proper way</span>
+                  <motion.span
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                  >
+                    🚀
+                  </motion.span>
+                  <motion.span
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.2 }}
+                  >
+                    📂
+                  </motion.span>
+                </div>
+              </div>
+
+              <a
+                href={selectedTask.link || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`w-full inline-flex items-center justify-center gap-2 btn-primary-gradient text-white font-mono text-xs font-bold py-3.5 rounded-sm hover:scale-[1.01] transition-all ${
+                  !selectedTask.link ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
+                {selectedTask.link ? "SUBMIT TO GOOGLE DRIVE 📤" : "DRIVE LINK NOT CONFIGURED YET 🛑"}
+              </a>
             </motion.div>
           </div>
         )}

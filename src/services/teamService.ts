@@ -25,13 +25,9 @@ export function mapRowToTeam(row: SupabaseTeamRow, index: number): Team {
     totalPoints: row.total_points,
     status: row.status || "",
     metrics: row.metrics || {
-      modelDesign: 0,
-      simulationAccuracy: 0,
-      systemPerformance: 0,
-      innovation: 0,
-      technicalApproach: 0,
-      resultAnalysis: 0,
-      presentation: 0,
+      circuitDesign: 0,
+      reportSubmission: 0,
+      result: 0,
     },
     lastUpdated: row.last_updated || "Just now",
     runHistory: row.run_history || [],
@@ -61,13 +57,9 @@ export const teamService = {
       total_points: team.totalPoints || 0,
       status: team.status || "Newly created",
       metrics: team.metrics || {
-        modelDesign: 0,
-        simulationAccuracy: 0,
-        systemPerformance: 0,
-        innovation: 0,
-        technicalApproach: 0,
-        resultAnalysis: 0,
-        presentation: 0,
+        circuitDesign: 0,
+        reportSubmission: 0,
+        result: 0,
       },
       last_updated: "Just now",
       run_history: team.runHistory || [],
@@ -89,8 +81,11 @@ export const teamService = {
   },
 
   async updateTeamScores(id: string, metrics: TeamMetrics): Promise<void> {
-    // Calculate total points
-    const totalPoints = Object.values(metrics).reduce((sum, value) => sum + (value || 0), 0);
+    // Calculate total points based on circuitDesign + reportSubmission + result
+    const totalPoints = 
+      (metrics.circuitDesign || 0) + 
+      (metrics.reportSubmission || 0) + 
+      (metrics.result || 0);
 
     const { error } = await supabase
       .from("teams")

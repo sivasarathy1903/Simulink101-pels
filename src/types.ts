@@ -1,11 +1,14 @@
 export interface TeamMetrics {
-  modelDesign: number;         // out of 100
-  simulationAccuracy: number;  // out of 100
-  systemPerformance: number;   // out of 100
-  innovation: number;          // out of 100
-  technicalApproach: number;   // out of 100
-  resultAnalysis: number;      // out of 100
-  presentation: number;        // out of 100
+  circuitDesign?: number;
+  reportSubmission?: number;
+  result?: number;
+  modelDesign?: number;
+  simulationAccuracy?: number;
+  systemPerformance?: number;
+  innovation?: number;
+  technicalApproach?: number;
+  resultAnalysis?: number;
+  presentation?: number;
 }
 
 export interface Team {

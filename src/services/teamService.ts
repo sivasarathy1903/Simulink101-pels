@@ -15,20 +15,30 @@ export interface SupabaseTeamRow {
   updated_at: string;
 }
 
+export function calcTotalPoints(metrics: TeamMetrics): number {
+  return (
+    (metrics.t1_circuit || 0) +
+    (metrics.t1_report || 0) +
+    (metrics.t1_result || 0) +
+    (metrics.t2_circuit || 0) +
+    (metrics.t2_report || 0) +
+    (metrics.t2_result || 0) +
+    (metrics.t3_circuit || 0) +
+    (metrics.t3_report || 0) +
+    (metrics.t3_result || 0)
+  );
+}
+
 // Convert from DB row to application model
 export function mapRowToTeam(row: SupabaseTeamRow, index: number): Team {
   return {
     id: row.id,
-    rank: index + 1, // dynamically calculated based on order
+    rank: index + 1,
     name: row.name,
     institution: row.institution,
     totalPoints: row.total_points,
     status: row.status || "",
-    metrics: row.metrics || {
-      circuitDesign: 0,
-      reportSubmission: 0,
-      result: 0,
-    },
+    metrics: row.metrics || {},
     lastUpdated: row.last_updated || "Just now",
     runHistory: row.run_history || [],
     tags: row.tags || [],
@@ -51,16 +61,15 @@ export const teamService = {
   },
 
   async createTeam(team: Partial<Team>): Promise<Team | null> {
+    const metrics = team.metrics || {};
+    const totalPoints = team.name === "__EVENT_CONFIG__" ? 0 : calcTotalPoints(metrics);
+
     const newTeamRow = {
       name: team.name,
       institution: team.institution || "",
-      total_points: team.totalPoints || 0,
-      status: team.status || "Newly created",
-      metrics: team.metrics || {
-        circuitDesign: 0,
-        reportSubmission: 0,
-        result: 0,
-      },
+      total_points: team.totalPoints ?? totalPoints,
+      status: team.status || "Registered",
+      metrics,
       last_updated: "Just now",
       run_history: team.runHistory || [],
       tags: team.tags || [],
@@ -81,11 +90,7 @@ export const teamService = {
   },
 
   async updateTeamScores(id: string, metrics: TeamMetrics): Promise<void> {
-    // Calculate total points based on circuitDesign + reportSubmission + result
-    const totalPoints = 
-      (metrics.circuitDesign || 0) + 
-      (metrics.reportSubmission || 0) + 
-      (metrics.result || 0);
+    const totalPoints = calcTotalPoints(metrics);
 
     const { error } = await supabase
       .from("teams")
@@ -98,6 +103,19 @@ export const teamService = {
 
     if (error) {
       console.error("Error updating team scores:", error);
+      throw error;
+    }
+  },
+
+  async updateTeamConfig(id: string, configMetrics: TeamMetrics): Promise<void> {
+    // For config team — don't touch total_points
+    const { error } = await supabase
+      .from("teams")
+      .update({ metrics: configMetrics })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating config:", error);
       throw error;
     }
   },

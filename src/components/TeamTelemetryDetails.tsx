@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, ShieldCheck, Trophy, Check } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Trophy, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Team } from "../types";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface TeamTelemetryDetailsProps {
   team: Team;
@@ -10,207 +10,213 @@ interface TeamTelemetryDetailsProps {
   isAdmin?: boolean;
 }
 
-export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, isAdmin = false }: TeamTelemetryDetailsProps) {
-  const [circuitDesign, setCircuitDesign] = useState(team.metrics.circuitDesign || 0);
-  const [reportSubmission, setReportSubmission] = useState(team.metrics.reportSubmission || 0);
-  const [result, setResult] = useState(team.metrics.result || 0);
-  const [isSaved, setIsSaved] = useState(false);
+interface TaskFields {
+  circuit: keyof Team["metrics"];
+  report: keyof Team["metrics"];
+  result: keyof Team["metrics"];
+}
 
-  useEffect(() => {
-    setCircuitDesign(team.metrics.circuitDesign || 0);
-    setReportSubmission(team.metrics.reportSubmission || 0);
-    setResult(team.metrics.result || 0);
-  }, [team]);
+const TASK_MAP: { label: string; key: string; fields: TaskFields }[] = [
+  { label: "Task 1 — Circuit Design Phase",   key: "t1", fields: { circuit: "t1_circuit", report: "t1_report", result: "t1_result" } },
+  { label: "Task 2 — Simulation Accuracy Phase", key: "t2", fields: { circuit: "t2_circuit", report: "t2_report", result: "t2_result" } },
+  { label: "Task 3 — Results & Report Phase", key: "t3", fields: { circuit: "t3_circuit", report: "t3_report", result: "t3_result" } },
+];
+
+export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, isAdmin = false }: TeamTelemetryDetailsProps) {
+  const [draftMetrics, setDraftMetrics] = useState<Team["metrics"]>({ ...team.metrics });
+  const [isSaved, setIsSaved] = useState(false);
+  const [expanded, setExpanded] = useState<string>("t1");
+
+  useEffect(() => { setDraftMetrics({ ...team.metrics }); }, [team]);
+
+  const calcTotal = (m: Team["metrics"]) =>
+    (Number(m.t1_circuit) || 0) + (Number(m.t1_report) || 0) + (Number(m.t1_result) || 0) +
+    (Number(m.t2_circuit) || 0) + (Number(m.t2_report) || 0) + (Number(m.t2_result) || 0) +
+    (Number(m.t3_circuit) || 0) + (Number(m.t3_report) || 0) + (Number(m.t3_result) || 0);
+
+  const calcTaskTotal = (m: Team["metrics"], key: string) =>
+    (Number(m[`${key}_circuit` as keyof Team["metrics"]]) || 0) +
+    (Number(m[`${key}_report` as keyof Team["metrics"]]) || 0) +
+    (Number(m[`${key}_result` as keyof Team["metrics"]]) || 0);
+
+  const handleField = (field: keyof Team["metrics"], max: number, val: string) => {
+    const num = Math.min(max, Math.max(0, Number(val)));
+    setDraftMetrics(prev => ({ ...prev, [field]: num }));
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const updatedMetrics = {
-      circuitDesign: Math.min(30, Math.max(0, Number(circuitDesign))),
-      reportSubmission: Math.min(30, Math.max(0, Number(reportSubmission))),
-      result: Math.min(40, Math.max(0, Number(result))),
-    };
-    await onUpdateMetrics(team.id, updatedMetrics);
+    await onUpdateMetrics(team.id, draftMetrics);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
 
-  const calculatedTotal = Number(circuitDesign) + Number(reportSubmission) + Number(result);
+  const liveTotal = calcTotal(draftMetrics);
+  const savedTotal = calcTotal(team.metrics);
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-12 px-4 md:px-8 mt-16 font-sans">
-      
-      {/* Return Button */}
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 font-mono text-xs text-white/60 hover:text-primary-red transition-colors bg-white/5 hover:bg-primary-red/10 border border-white/10 hover:border-primary-red/20 px-4 py-2 rounded-sm mb-8"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        BACK TO LEADERBOARD
+    <div className="w-full max-w-5xl mx-auto py-12 px-4 md:px-8 mt-14 font-sans">
+
+      {/* Back */}
+      <button onClick={onBack}
+        className="flex items-center gap-2 font-mono text-xs text-white/40 hover:text-primary-red transition-colors border border-white/[0.08] hover:border-primary-red/25 bg-white/[0.025] px-4 py-2 rounded-lg mb-8 cursor-pointer">
+        <ArrowLeft className="h-3.5 w-3.5" /> Back to Leaderboard
       </button>
 
-      {/* Hero Header */}
-      <div className="relative mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      {/* Hero */}
+      <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
         <div>
-          <span className="font-mono text-xs text-primary-red uppercase tracking-widest block mb-1">TEAM METRICS & PROFILE</span>
-          <h1 className="font-display font-extrabold text-4xl md:text-5xl text-white tracking-tight drop-shadow-md">
-            {team.name}
-          </h1>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {team.tags?.map((member, i) => (
-              <span key={i} className="font-mono text-xs bg-white/5 border border-white/10 px-2.5 py-1 rounded text-white/70">
-                👤 {member}
-              </span>
-            ))}
-          </div>
+          <span className="font-mono text-[10px] text-primary-red uppercase tracking-widest block mb-1.5">Team Profile</span>
+          <h1 className="font-display font-black text-4xl md:text-5xl text-white tracking-tight">{team.name}</h1>
+
+          {/* Members */}
+          {team.tags && team.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {team.tags.map((m, i) => (
+                <span key={i} className="font-mono text-[10px] bg-white/[0.04] border border-white/[0.08] text-white/60 px-2.5 py-1 rounded-full">
+                  👤 {m}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Current Rank & Total Points */}
-        <div className="flex gap-6 items-center bg-white/[0.01] p-4 rounded-lg border border-white/10 backdrop-blur-md">
-          <div className="text-right">
-            <span className="font-mono text-[10px] text-white/40 block leading-tight">CURRENT RANK</span>
-            <span className="font-display font-black text-4xl text-white/70">
-              #{team.rank.toString().padStart(2, "0")}
-            </span>
+        {/* Score pill */}
+        <div className="flex gap-5 items-center bg-white/[0.025] border border-white/10 rounded-xl px-6 py-4 shrink-0">
+          <div className="text-center">
+            <p className="font-mono text-[9px] text-white/30 tracking-widest mb-0.5">RANK</p>
+            <p className="font-display font-black text-4xl text-white/60">#{team.rank.toString().padStart(2, "0")}</p>
           </div>
-          <div className="h-10 w-[1px] bg-white/10"></div>
-          <div className="text-right bg-primary-red px-5 py-2.5 rounded shadow-lg shadow-primary-red/15">
-            <span className="font-mono text-[10px] text-white/95 block leading-tight font-bold">TOTAL POINTS</span>
-            <span className="font-display font-black text-4xl text-white">
-              {calculatedTotal}
-            </span>
+          <div className="w-px h-10 bg-white/10" />
+          <div className="text-center bg-primary-red rounded-xl px-5 py-2.5 shadow-lg shadow-primary-red/20">
+            <p className="font-mono text-[9px] text-white/80 tracking-widest mb-0.5">TOTAL SCORE</p>
+            <p className="font-display font-black text-4xl text-white">{savedTotal}</p>
+          </div>
+          <div className="text-center">
+            <p className="font-mono text-[9px] text-white/30 tracking-widest mb-0.5">MAX</p>
+            <p className="font-display font-black text-2xl text-white/25">300</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        {/* Left Side: Score Split up Display */}
-        <div className="glass-panel p-6 rounded-lg relative overflow-hidden flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-6 border-b border-white/10 pb-3">
-              <Trophy className="h-4 w-4 text-primary-red" />
-              <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-white">MARKS SPLIT-UP</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+        {/* Left: Read-only breakdown */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          <div className="glass-panel rounded-xl p-5 border border-white/[0.06]">
+            <div className="flex items-center gap-2 mb-5">
+              <Trophy className="h-4 w-4 text-yellow-400" />
+              <h2 className="font-mono text-xs font-bold text-white tracking-widest uppercase">Score Summary</h2>
             </div>
 
-            <div className="space-y-6">
-              {/* Circuit Design */}
-              <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                <div className="flex flex-col">
-                  <span className="font-sans font-semibold text-white text-sm">Circuit Design</span>
-                  <span className="font-mono text-[10px] text-white/40">Evaluation of converter topology design</span>
-                </div>
-                <span className="font-mono text-lg font-bold text-white">
-                  <span className="text-primary-red">{circuitDesign}</span> <span className="text-white/35">/ 30</span>
-                </span>
-              </div>
-
-              {/* Report Submission */}
-              <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                <div className="flex flex-col">
-                  <span className="font-sans font-semibold text-white text-sm">Report Submission</span>
-                  <span className="font-mono text-[10px] text-white/40">Technical report clarity and analysis</span>
-                </div>
-                <span className="font-mono text-lg font-bold text-white">
-                  <span className="text-primary-red">{reportSubmission}</span> <span className="text-white/35">/ 30</span>
-                </span>
-              </div>
-
-              {/* Result */}
-              <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                <div className="flex flex-col">
-                  <span className="font-sans font-semibold text-white text-sm">Result</span>
-                  <span className="font-mono text-[10px] text-white/40">Simulation outputs validation & graphs accuracy</span>
-                </div>
-                <span className="font-mono text-lg font-bold text-white">
-                  <span className="text-primary-red">{result}</span> <span className="text-white/35">/ 40</span>
-                </span>
-              </div>
+            <div className="space-y-4">
+              {TASK_MAP.map(({ label, key }) => {
+                const taskPts = calcTaskTotal(team.metrics, key);
+                const pct = (taskPts / 100) * 100;
+                return (
+                  <div key={key}>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="font-mono text-[10px] text-white/50">{label.split(" — ")[0]}</span>
+                      <span className="font-mono text-xs font-bold text-white"><span className="text-primary-red">{taskPts}</span><span className="text-white/20"> / 100</span></span>
+                    </div>
+                    <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                      <motion.div className="h-full bg-gradient-to-r from-primary-red to-red-600 rounded-full"
+                        initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, ease: "easeOut" }} />
+                    </div>
+                    <div className="flex justify-between font-mono text-[8px] text-white/25 mt-1">
+                      <span>Circuit {Number(team.metrics[`${key}_circuit` as keyof Team["metrics"]]) || 0}/30</span>
+                      <span>Report {Number(team.metrics[`${key}_report` as keyof Team["metrics"]]) || 0}/30</span>
+                      <span>Result {Number(team.metrics[`${key}_result` as keyof Team["metrics"]]) || 0}/40</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
 
-          <div className="mt-8 pt-4 border-t border-white/5 flex justify-between text-[10px] font-mono text-white/40">
-            <span>MAXIMUM MARKS: 100</span>
-            <span className="text-primary-red">SIMVERSE_V1.0</span>
+            <div className="mt-5 pt-4 border-t border-white/[0.06] flex justify-between items-center">
+              <span className="font-mono text-[10px] text-white/35">Cumulative Total</span>
+              <span className="font-display font-black text-xl text-white">{savedTotal}<span className="text-white/20 text-xs font-mono"> / 300</span></span>
+            </div>
           </div>
         </div>
 
-        {/* Right Side: Admin Marks Entry Portal */}
-        {isAdmin ? (
-          <div className="glass-panel p-6 rounded-lg relative overflow-hidden border-primary-red/20 bg-gradient-to-b from-primary-red/[0.02] to-transparent shadow-xl">
-            <div className="flex items-center gap-2 mb-6 border-b border-white/10 pb-3">
-              <ShieldCheck className="h-4 w-4 text-primary-red" />
-              <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-white">ADMIN MARKS ENTRY</h2>
-            </div>
-
-            <form onSubmit={handleSave} className="space-y-5">
-              
-              {/* Circuit Design Input */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-xs text-white/70 uppercase">CIRCUIT DESIGN (MAX 30)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="30"
-                  value={circuitDesign}
-                  onChange={(e) => setCircuitDesign(Math.min(30, Math.max(0, Number(e.target.value))))}
-                  className="bg-white/5 border border-white/10 focus:border-primary-red rounded px-3 py-2 text-sm text-white font-mono outline-none"
-                />
-              </div>
-
-              {/* Report Submission Input */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-xs text-white/70 uppercase">REPORT SUBMISSION (MAX 30)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="30"
-                  value={reportSubmission}
-                  onChange={(e) => setReportSubmission(Math.min(30, Math.max(0, Number(e.target.value))))}
-                  className="bg-white/5 border border-white/10 focus:border-primary-red rounded px-3 py-2 text-sm text-white font-mono outline-none"
-                />
-              </div>
-
-              {/* Result Input */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-xs text-white/70 uppercase">RESULT (MAX 40)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="40"
-                  value={result}
-                  onChange={(e) => setResult(Math.min(40, Math.max(0, Number(e.target.value))))}
-                  className="bg-white/5 border border-white/10 focus:border-primary-red rounded px-3 py-2 text-sm text-white font-mono outline-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full btn-primary-gradient font-mono text-xs font-bold text-white py-3.5 rounded hover:scale-[1.01] transition-transform flex items-center justify-center gap-1.5 cursor-pointer mt-2"
-              >
-                {isSaved ? (
-                  <>
-                    <Check className="h-4 w-4 text-green-400" />
-                    MARKS UPDATED
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="h-4 w-4" />
-                    SAVE CHANGES
-                  </>
+        {/* Right: Admin marks entry */}
+        <div className="lg:col-span-3">
+          {isAdmin ? (
+            <form onSubmit={handleSave} className="glass-panel rounded-xl p-5 border border-primary-red/15 bg-gradient-to-b from-primary-red/[0.02] to-transparent">
+              <div className="flex items-center gap-2 mb-5">
+                <ShieldCheck className="h-4 w-4 text-primary-red" />
+                <h2 className="font-mono text-xs font-bold text-white tracking-widest uppercase">Admin — Enter Marks</h2>
+                {liveTotal !== savedTotal && (
+                  <span className="ml-auto font-mono text-[9px] text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full">Unsaved</span>
                 )}
+              </div>
+
+              {/* Live total preview */}
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 flex justify-between items-center mb-5">
+                <span className="font-mono text-[10px] text-white/40">Preview Total</span>
+                <span className="font-display font-black text-2xl text-white">{liveTotal}<span className="text-white/20 text-xs font-mono"> / 300</span></span>
+              </div>
+
+              <div className="space-y-3">
+                {TASK_MAP.map(({ label, key }) => {
+                  const isOpen = expanded === key;
+                  const taskPts = calcTaskTotal(draftMetrics, key);
+                  return (
+                    <div key={key} className="border border-white/[0.06] rounded-xl overflow-hidden">
+                      <button type="button" onClick={() => setExpanded(isOpen ? "" : key)}
+                        className="w-full flex items-center justify-between p-4 text-left hover:bg-white/[0.02] transition-colors cursor-pointer">
+                        <div>
+                          <p className="font-mono text-[10px] text-white/50">{label}</p>
+                          <p className="font-display font-semibold text-white text-sm mt-0.5">
+                            Score: <span className="text-primary-red">{taskPts}</span><span className="text-white/25"> / 100</span>
+                          </p>
+                        </div>
+                        {isOpen ? <ChevronUp className="h-4 w-4 text-white/30" /> : <ChevronDown className="h-4 w-4 text-white/30" />}
+                      </button>
+
+                      <AnimatePresence>
+                        {isOpen && (
+                          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
+                            <div className="p-4 pt-0 grid grid-cols-3 gap-3 border-t border-white/[0.06]">
+                              {[
+                                { label: "Circuit Design", field: `${key}_circuit` as keyof Team["metrics"], max: 30 },
+                                { label: "Report Submission", field: `${key}_report` as keyof Team["metrics"], max: 30 },
+                                { label: "Result", field: `${key}_result` as keyof Team["metrics"], max: 40 },
+                              ].map(({ label: fl, field, max }) => (
+                                <div key={field as string} className="flex flex-col gap-1.5">
+                                  <label className="font-mono text-[9px] text-white/35 uppercase">{fl}<span className="text-white/20"> /{max}</span></label>
+                                  <input type="number" min={0} max={max}
+                                    value={Number(draftMetrics[field]) || 0}
+                                    onChange={e => handleField(field, max, e.target.value)}
+                                    className="bg-[#070709] border border-white/10 focus:border-primary-red/60 rounded-lg px-3 py-2 text-sm text-white font-mono outline-none w-full" />
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button type="submit"
+                className="w-full btn-primary-gradient font-mono text-xs font-bold text-white py-3.5 rounded-xl hover:scale-[1.01] transition-transform flex items-center justify-center gap-2 cursor-pointer mt-5">
+                {isSaved ? (<><Check className="h-4 w-4 text-green-300" /> MARKS SAVED</>)
+                  : (<><ShieldCheck className="h-4 w-4" /> SAVE ALL MARKS</>)}
               </button>
             </form>
-          </div>
-        ) : (
-          <div className="glass-panel p-6 rounded-lg flex flex-col justify-center items-center text-center opacity-65">
-            <Trophy className="h-10 w-10 text-white/20 mb-3 animate-pulse" />
-            <h3 className="font-sans font-bold text-white text-base">EVALUATION IN PROGRESS</h3>
-            <p className="font-mono text-xs text-white/50 mt-1 max-w-xs">
-              Marks updates are strictly restricted to event coordinators. Contact admin if metrics synchronization is required.
-            </p>
-          </div>
-        )}
-
+          ) : (
+            <div className="glass-panel rounded-xl p-10 border border-white/[0.06] flex flex-col items-center justify-center text-center h-full">
+              <Trophy className="h-12 w-12 text-white/10 mb-4" />
+              <h3 className="font-display font-bold text-white text-lg">Evaluation In Progress</h3>
+              <p className="font-mono text-xs text-white/35 mt-2 max-w-xs leading-relaxed">
+                Score updates are restricted to event coordinators. Results will reflect here as tasks are graded.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

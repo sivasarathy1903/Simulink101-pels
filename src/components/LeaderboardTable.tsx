@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Trophy, HelpCircle, Plus, X, ShieldCheck } from "lucide-react";
+import { Search, Trophy, HelpCircle, Plus, X, ShieldCheck, Trash2 } from "lucide-react";
 import { Team } from "../types";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -7,10 +7,11 @@ interface LeaderboardTableProps {
   teams: Team[];
   onSelectTeam: (team: Team) => void;
   onRegisterTeam: (data: { name: string; members: string[] }) => void;
+  onDeleteTeam?: (id: string) => void;
   isAdmin?: boolean;
 }
 
-export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, isAdmin = false }: LeaderboardTableProps) {
+export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, onDeleteTeam, isAdmin = false }: LeaderboardTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [formName, setFormName] = useState("");
@@ -100,7 +101,6 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
 
                   <div className="flex flex-col items-center">
                     <span className={`font-display font-black text-5xl leading-none ${cfg.textColor}`}>{team.totalPoints}</span>
-                    <span className="font-mono text-[9px] text-white/25 mt-1">/ 300 pts</span>
                   </div>
                 </motion.div>
               );
@@ -126,6 +126,7 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
                   <th className="py-3.5 px-5 text-center w-16">POS</th>
                   <th className="py-3.5 px-5">TEAM</th>
                   <th className="py-3.5 px-5 text-right w-48">TOTAL PTS</th>
+                  {isAdmin && <th className="py-3.5 px-5 w-12" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -143,11 +144,23 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
                     <td className="py-4 px-5 text-right">
                       <div className="inline-flex flex-col items-end gap-0.5">
                         <span className="font-display font-black text-4xl text-primary-red leading-none">{team.totalPoints}</span>
-                        {team.rank <= 3 && (
-                          <span className="font-mono text-[9px] text-white/30">/ 300 pts</span>
-                        )}
                       </div>
                     </td>
+                    {isAdmin && (
+                      <td className="py-4 px-3" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete team "${team.name}"? This cannot be undone.`)) {
+                              onDeleteTeam?.(team.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all cursor-pointer"
+                          title="Delete team"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

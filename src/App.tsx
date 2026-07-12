@@ -464,36 +464,58 @@ export default function App() {
                         key={key}
                         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 + 0.2 }}
                         whileHover={{ y: -5, scale: 1.015 }}
-                        className="relative rounded-xl p-7 flex flex-col gap-5 border overflow-hidden transition-all duration-300 border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:border-primary-red/40 hover:shadow-xl hover:shadow-primary-red/8"
+                        className="relative rounded-xl p-7 flex flex-col gap-5 border overflow-hidden transition-all duration-300 border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:border-white/20"
                       >
                         {/* Background number watermark */}
                         <span className="absolute -right-3 -bottom-4 font-display font-black text-[120px] text-white/[0.03] leading-none select-none pointer-events-none">{key}</span>
 
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-primary-red/10 border border-primary-red/20 flex items-center justify-center">
-                            <Icon className="h-5 w-5 text-primary-red" />
+                          <div className="h-10 w-10 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center">
+                            <Icon className="h-5 w-5 text-white/30" />
                           </div>
-                          <span className="font-mono text-[10px] font-bold text-primary-red tracking-widest">{title.toUpperCase()}</span>
+                          <span className="font-mono text-[10px] font-bold text-white/30 tracking-widest">{title.toUpperCase()}</span>
                         </div>
 
                         <div>
-                          <h3 className="font-display font-bold text-3xl text-white">{title}</h3>
-                          <p className="font-mono text-xs text-white/40 mt-2 tracking-wider">Coming soon…</p>
+                          <h3 className="font-display font-bold text-3xl text-white/50">{title}</h3>
+
+                          {/* Jail / locked animation */}
+                          <div className="mt-4 relative flex items-center justify-center h-16 rounded-lg overflow-hidden bg-black/30 border border-white/[0.07]">
+                            {/* Bars */}
+                            {[0,1,2,3,4,5].map(i => (
+                              <motion.div
+                                key={i}
+                                className="absolute top-0 bottom-0 w-[3px] rounded-full bg-gradient-to-b from-white/25 via-white/10 to-white/25"
+                                style={{ left: `${14 + i * 14}%` }}
+                                animate={{ scaleY: [1, 0.92, 1], opacity: [0.5, 0.3, 0.5] }}
+                                transition={{ duration: 2.2, delay: i * 0.18, repeat: Infinity, ease: "easeInOut" }}
+                              />
+                            ))}
+                            {/* Lock icon centre */}
+                            <motion.div
+                              className="relative z-10 flex flex-col items-center gap-1"
+                              animate={{ y: [0, -2, 0] }}
+                              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                            >
+                              <Lock className="h-5 w-5 text-white/40" />
+                              <span className="font-mono text-[9px] text-white/25 tracking-widest uppercase">Locked</span>
+                            </motion.div>
+                          </div>
                         </div>
 
                         <div className="pt-3 border-t border-white/[0.06] mt-auto">
                           <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="bg-white/[0.04] rounded-lg py-2">
-                              <p className="font-display font-black text-white text-sm">30</p>
-                              <p className="font-mono text-[8px] text-white/30 mt-0.5">Circuit</p>
+                            <div className="bg-white/[0.02] rounded-lg py-2">
+                              <p className="font-display font-black text-white/30 text-sm">30</p>
+                              <p className="font-mono text-[8px] text-white/20 mt-0.5">Circuit</p>
                             </div>
-                            <div className="bg-white/[0.04] rounded-lg py-2">
-                              <p className="font-display font-black text-white text-sm">30</p>
-                              <p className="font-mono text-[8px] text-white/30 mt-0.5">Report</p>
+                            <div className="bg-white/[0.02] rounded-lg py-2">
+                              <p className="font-display font-black text-white/30 text-sm">30</p>
+                              <p className="font-mono text-[8px] text-white/20 mt-0.5">Report</p>
                             </div>
-                            <div className="bg-white/[0.04] rounded-lg py-2">
-                              <p className="font-display font-black text-primary-red text-sm">40</p>
-                              <p className="font-mono text-[8px] text-white/30 mt-0.5">Result</p>
+                            <div className="bg-white/[0.02] rounded-lg py-2">
+                              <p className="font-display font-black text-white/30 text-sm">40</p>
+                              <p className="font-mono text-[8px] text-white/20 mt-0.5">Result</p>
                             </div>
                           </div>
                         </div>
@@ -505,7 +527,7 @@ export default function App() {
                   <div className="mt-8 bg-white/[0.015] border border-white/[0.06] rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <Trophy className="h-5 w-5 text-yellow-400 shrink-0" />
                     <div>
-                      <p className="font-mono text-xs text-white font-semibold">CUMULATIVE SCORING — MAX 300 POINTS</p>
+                      <p className="font-mono text-xs text-white font-semibold">CUMULATIVE SCORING</p>
                       <p className="font-mono text-[10px] text-white/40 mt-0.5">Each task contributes up to 100 points (Circuit 30 + Report 30 + Result 40). Scores accumulate across all three tasks.</p>
                     </div>
                   </div>
@@ -516,7 +538,7 @@ export default function App() {
 
           ) : (
             <motion.div key="lb" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.28 }}>
-              <LeaderboardTable teams={filteredTeams} onSelectTeam={setSelectedTeam} onRegisterTeam={handleRegisterTeam} isAdmin={currentUser.role === "admin"} />
+              <LeaderboardTable teams={filteredTeams} onSelectTeam={setSelectedTeam} onRegisterTeam={handleRegisterTeam} onDeleteTeam={async (id) => { try { await teamService.deleteTeam(id); } catch (err) { console.error(err); alert("Failed to delete team."); } }} isAdmin={currentUser.role === "admin"} />
             </motion.div>
           )}
 

@@ -328,11 +328,28 @@ export default function App() {
                 {/* Center content */}
                 <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-5xl">
 
-                  {/* Badge */}
-                  <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }}
-                    className="flex items-center gap-2 bg-white/[0.04] border border-white/10 px-4 py-1.5 rounded-full mb-8">
+                  {/* IEEE badge text — top */}
+                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.5 }}
+                    className="flex items-center gap-2 bg-white/[0.04] border border-white/10 px-4 py-1.5 rounded-full mb-6">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary-red animate-pulse" />
                     <span className="font-mono text-[10px] text-white/60 tracking-widest uppercase">IEEE Power Electronics Society</span>
+                  </motion.div>
+
+                  {/* IEEE PELS Logo — directly above event name */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    className="mb-5"
+                  >
+                    <div className="relative inline-block">
+                      <div className="absolute inset-0 rounded-full bg-primary-red/20 blur-2xl scale-150 animate-pulse" />
+                      <img
+                        alt="IEEE PELS Logo"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWFhypqX49CLE1dA5h3Oo_p3Npdqs-zfB5A4aibOI5YUyN8LXhfqByUJrbE1xMNSFe3OI32os9ob8caLvQw8Z6DUhISk5_OZONeWi6w0dBmrsPu-5ljDhj3-YmMjT6QejkL6RMH4BV7ihr0d2_cUae1BKjVz1LX3i6ncb-mBoZBzBGFkocvzdJobfcDsdL2DFCQ2o54PskiTpKDIwdjMfm2JbpKiVDyESbWX6H92vW3nu4vuBoVdG3gi0MhS2zksFiIJA"
+                        className="relative h-28 w-28 rounded-full border border-white/15 shadow-2xl shadow-primary-red/20 object-contain p-1"
+                      />
+                    </div>
                   </motion.div>
 
                   {/* SIMVERSE — professional staggered reveal */}
@@ -442,43 +459,42 @@ export default function App() {
 
                   {/* Task Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {tasks.map(({ key, released, link, title, subtitle, desc, Icon }, idx) => (
+                    {tasks.map(({ key, title, Icon }, idx) => (
                       <motion.div
                         key={key}
                         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 + 0.2 }}
-                        whileHover={released ? { y: -5, scale: 1.015 } : {}}
-                        onClick={() => released && setSelectedTask({ title: `${title}: ${subtitle}`, link, description: desc })}
-                        className={`relative rounded-xl p-7 flex flex-col gap-5 border overflow-hidden transition-all duration-300 ${
-                          released
-                            ? "border-primary-red/30 bg-gradient-to-br from-primary-red/[0.06] to-transparent cursor-pointer hover:border-primary-red/60 hover:shadow-xl hover:shadow-primary-red/10"
-                            : "border-white/[0.06] bg-white/[0.015] cursor-default opacity-55"
-                        }`}
+                        whileHover={{ y: -5, scale: 1.015 }}
+                        className="relative rounded-xl p-7 flex flex-col gap-5 border overflow-hidden transition-all duration-300 border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:border-primary-red/40 hover:shadow-xl hover:shadow-primary-red/8"
                       >
                         {/* Background number watermark */}
-                        <span className="absolute -right-3 -bottom-4 font-display font-black text-[120px] text-white/[0.025] leading-none select-none pointer-events-none">{key}</span>
+                        <span className="absolute -right-3 -bottom-4 font-display font-black text-[120px] text-white/[0.03] leading-none select-none pointer-events-none">{key}</span>
 
-                        <div className="flex items-center justify-between">
-                          <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${released ? "bg-primary-red/15 border border-primary-red/30" : "bg-white/5 border border-white/10"}`}>
-                            <Icon className={`h-5 w-5 ${released ? "text-primary-red" : "text-white/30"}`} />
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-primary-red/10 border border-primary-red/20 flex items-center justify-center">
+                            <Icon className="h-5 w-5 text-primary-red" />
                           </div>
-                          <span className={`font-mono text-[10px] font-bold px-2.5 py-1 rounded-full border ${released ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-white/30 border-white/10 bg-white/5"}`}>
-                            {released ? "RELEASED" : <span className="flex items-center gap-1"><Lock className="h-2.5 w-2.5 inline" /> LOCKED</span>}
-                          </span>
+                          <span className="font-mono text-[10px] font-bold text-primary-red tracking-widest">{title.toUpperCase()}</span>
                         </div>
 
                         <div>
-                          <p className="font-mono text-[10px] text-primary-red tracking-widest font-semibold mb-1">{title.toUpperCase()}</p>
-                          <h3 className="font-display font-bold text-lg text-white">{subtitle}</h3>
-                          <p className="font-sans text-xs text-white/50 mt-2 leading-relaxed">{desc}</p>
+                          <h3 className="font-display font-bold text-3xl text-white">{title}</h3>
+                          <p className="font-mono text-xs text-white/40 mt-2 tracking-wider">Coming soon…</p>
                         </div>
 
-                        <div className="pt-2 border-t border-white/[0.06]">
-                          <div className="flex gap-3 text-[10px] font-mono text-white/35">
-                            <span>Circuit Design — 30</span>
-                            <span>·</span>
-                            <span>Report — 30</span>
-                            <span>·</span>
-                            <span>Result — 40</span>
+                        <div className="pt-3 border-t border-white/[0.06] mt-auto">
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="bg-white/[0.04] rounded-lg py-2">
+                              <p className="font-display font-black text-white text-sm">30</p>
+                              <p className="font-mono text-[8px] text-white/30 mt-0.5">Circuit</p>
+                            </div>
+                            <div className="bg-white/[0.04] rounded-lg py-2">
+                              <p className="font-display font-black text-white text-sm">30</p>
+                              <p className="font-mono text-[8px] text-white/30 mt-0.5">Report</p>
+                            </div>
+                            <div className="bg-white/[0.04] rounded-lg py-2">
+                              <p className="font-display font-black text-primary-red text-sm">40</p>
+                              <p className="font-mono text-[8px] text-white/30 mt-0.5">Result</p>
+                            </div>
                           </div>
                         </div>
                       </motion.div>

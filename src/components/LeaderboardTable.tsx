@@ -32,7 +32,6 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
   };
 
   const top3 = sorted.slice(0, 3);
-  const rest = sorted.slice(3);
 
   const podiumOrder = top3.length === 3
     ? [top3[1], top3[0], top3[2]]   // silver | gold | bronze
@@ -85,9 +84,9 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
                 <motion.div key={team.id}
                   initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: team.rank === 1 ? 0 : team.rank === 2 ? 0.1 : 0.2 }}
-                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileHover={{ y: -6, scale: 1.025 }}
                   onClick={() => onSelectTeam(team)}
-                  className={`relative flex-1 glass-panel rounded-xl p-5 flex flex-col justify-between text-center cursor-pointer border ${cfg.height} ${cfg.border} shadow-xl ${cfg.glow} bg-gradient-to-b from-white/[0.025] to-transparent transition-all duration-300`}>
+                  className={`relative flex-1 glass-panel rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border ${cfg.height} ${cfg.border} shadow-xl ${cfg.glow} bg-gradient-to-b from-white/[0.025] to-transparent transition-all duration-300`}>
 
                   {/* Rank badge */}
                   <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 ${cfg.badge} text-[9px] font-black px-3 py-0.5 rounded-full flex items-center gap-1 shadow-lg whitespace-nowrap`}>
@@ -95,13 +94,13 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
                   </div>
 
                   <div className="pt-3 flex flex-col gap-1">
-                    <h3 className="font-display font-black text-base text-white leading-tight">{team.name}</h3>
-                    <p className="font-mono text-[9px] text-white/35">{team.tags.length > 0 ? `${team.tags.length} members` : "—"}</p>
+                    <h3 className="font-display font-black text-lg text-white leading-tight">{team.name}</h3>
+                    <p className="font-mono text-[9px] text-white/35">{team.tags.length > 0 ? `${team.tags.length} member${team.tags.length !== 1 ? 's' : ''}` : "—"}</p>
                   </div>
 
-                  <div>
-                    <span className={`font-display font-black text-3xl ${cfg.textColor}`}>{team.totalPoints}</span>
-                    <span className="font-mono text-[9px] text-white/30 block">/ 300 pts</span>
+                  <div className="flex flex-col items-center">
+                    <span className={`font-display font-black text-5xl leading-none ${cfg.textColor}`}>{team.totalPoints}</span>
+                    <span className="font-mono text-[9px] text-white/25 mt-1">/ 300 pts</span>
                   </div>
                 </motion.div>
               );
@@ -110,8 +109,15 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
         </div>
       )}
 
-      {/* Table — remaining teams */}
-      {rest.length > 0 && (
+      {sorted.length === 0 && (
+        <div className="flex flex-col items-center py-20 gap-3">
+          <HelpCircle className="h-10 w-10 text-white/10" />
+          <span className="font-mono text-xs text-white/25">No teams registered yet</span>
+        </div>
+      )}
+
+      {/* All teams summary below podium */}
+      {sorted.length > 0 && (
         <div className="glass-panel rounded-xl overflow-hidden border border-white/[0.06] shadow-xl mb-8">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -119,11 +125,11 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
                 <tr className="border-b border-white/[0.06] font-mono text-[9px] text-white/30 tracking-widest uppercase">
                   <th className="py-3.5 px-5 text-center w-16">POS</th>
                   <th className="py-3.5 px-5">TEAM</th>
-                  <th className="py-3.5 px-5 text-right w-36">TOTAL PTS</th>
+                  <th className="py-3.5 px-5 text-right w-48">TOTAL PTS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {rest.map(team => (
+                {sorted.map(team => (
                   <tr key={team.id} onClick={() => onSelectTeam(team)} className="group hover:bg-white/[0.02] cursor-pointer transition-colors">
                     <td className="py-4 px-5 text-center">
                       <div className="mx-auto w-7 h-7 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center font-mono text-[11px] text-white/50">{team.rank}</div>
@@ -135,9 +141,11 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
                       )}
                     </td>
                     <td className="py-4 px-5 text-right">
-                      <div className="inline-flex flex-col items-end">
-                        <span className="font-display font-black text-sm text-primary-red">{team.totalPoints}</span>
-                        <span className="font-mono text-[8px] text-white/20">/ 300</span>
+                      <div className="inline-flex flex-col items-end gap-0.5">
+                        <span className="font-display font-black text-4xl text-primary-red leading-none">{team.totalPoints}</span>
+                        {team.rank <= 3 && (
+                          <span className="font-mono text-[9px] text-white/30">/ 300 pts</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -145,13 +153,6 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {sorted.length === 0 && (
-        <div className="flex flex-col items-center py-20 gap-3">
-          <HelpCircle className="h-10 w-10 text-white/10" />
-          <span className="font-mono text-xs text-white/25">No teams registered yet</span>
         </div>
       )}
 

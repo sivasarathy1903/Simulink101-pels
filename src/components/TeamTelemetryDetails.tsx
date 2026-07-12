@@ -26,6 +26,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
   const [draftMetrics, setDraftMetrics] = useState<Team["metrics"]>({ ...team.metrics });
   const [isSaved, setIsSaved] = useState(false);
   const [expanded, setExpanded] = useState<string>("t1");
+  const [expandedSummaryTask, setExpandedSummaryTask] = useState<string>("");
 
   useEffect(() => { setDraftMetrics({ ...team.metrics }); }, [team]);
 
@@ -103,39 +104,66 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
 
         {/* Left: Read-only breakdown */}
         <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="glass-panel rounded-xl p-5 border border-white/[0.06]">
-            <div className="flex items-center gap-2 mb-5">
-              <Trophy className="h-4 w-4 text-yellow-400" />
-              <h2 className="font-mono text-xs font-bold text-white tracking-widest uppercase">Score Summary</h2>
+          <div className="glass-panel rounded-xl p-6 border border-white/[0.06]">
+            <div className="flex items-center gap-3 mb-8">
+              <Trophy className="h-6 w-6 text-yellow-400" />
+              <h2 className="font-mono text-lg font-bold text-white tracking-widest uppercase">Score Summary</h2>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               {TASK_MAP.map(({ label, key }) => {
                 const taskPts = calcTaskTotal(team.metrics, key);
                 const pct = (taskPts / 100) * 100;
+                const isExpanded = expandedSummaryTask === key;
                 return (
-                  <div key={key}>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="font-mono text-[10px] text-white/50">{label.split(" — ")[0]}</span>
-                      <span className="font-mono text-xs font-bold text-white"><span className="text-primary-red">{taskPts}</span><span className="text-white/20"> / 100</span></span>
+                  <div key={key} className="cursor-pointer group" onClick={() => setExpandedSummaryTask(isExpanded ? "" : key)}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-mono text-sm text-white/70 group-hover:text-white transition-colors">{label.split(" — ")[0]}</span>
+                      <span className="font-mono text-xl font-bold text-white"><span className="text-primary-red">{taskPts}</span><span className="text-white/20"> / 100</span></span>
                     </div>
-                    <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
                       <motion.div className="h-full bg-gradient-to-r from-primary-red to-red-600 rounded-full"
                         initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, ease: "easeOut" }} />
                     </div>
-                    <div className="flex justify-between font-mono text-[8px] text-white/25 mt-1">
-                      <span>Circuit {Number(team.metrics[`${key}_circuit` as keyof Team["metrics"]]) || 0}/30</span>
-                      <span>Report {Number(team.metrics[`${key}_report` as keyof Team["metrics"]]) || 0}/30</span>
-                      <span>Result {Number(team.metrics[`${key}_result` as keyof Team["metrics"]]) || 0}/40</span>
-                    </div>
+                    <AnimatePresence>
+                      {isExpanded ? (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden mt-3"
+                        >
+                          <div className="bg-white/[0.02] border border-white/[0.04] rounded-lg p-4 grid grid-cols-3 gap-2">
+                            <div className="text-center">
+                              <p className="font-mono text-[10px] text-white/40 uppercase mb-1">Circuit</p>
+                              <p className="font-display text-2xl font-bold text-white">{Number(team.metrics[`${key}_circuit` as keyof Team["metrics"]]) || 0}<span className="text-xs text-white/30">/30</span></p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-mono text-[10px] text-white/40 uppercase mb-1">Report</p>
+                              <p className="font-display text-2xl font-bold text-white">{Number(team.metrics[`${key}_report` as keyof Team["metrics"]]) || 0}<span className="text-xs text-white/30">/30</span></p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-mono text-[10px] text-white/40 uppercase mb-1">Result</p>
+                              <p className="font-display text-2xl font-bold text-white">{Number(team.metrics[`${key}_result` as keyof Team["metrics"]]) || 0}<span className="text-xs text-white/30">/40</span></p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div className="flex justify-between font-mono text-[10px] text-white/25 mt-1.5" initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                          <span>Circuit {Number(team.metrics[`${key}_circuit` as keyof Team["metrics"]]) || 0}/30</span>
+                          <span>Report {Number(team.metrics[`${key}_report` as keyof Team["metrics"]]) || 0}/30</span>
+                          <span>Result {Number(team.metrics[`${key}_result` as keyof Team["metrics"]]) || 0}/40</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 );
               })}
             </div>
 
-            <div className="mt-5 pt-4 border-t border-white/[0.06] flex justify-between items-center">
-              <span className="font-mono text-[10px] text-white/35">Cumulative Total</span>
-              <span className="font-display font-black text-xl text-white">{savedTotal}<span className="text-white/20 text-xs font-mono"> / 300</span></span>
+            <div className="mt-8 pt-6 border-t border-white/[0.06] flex justify-between items-center">
+              <span className="font-mono text-sm text-white/35">Cumulative Total</span>
+              <span className="font-display font-black text-3xl text-white">{savedTotal}<span className="text-white/20 text-lg font-mono"> / 300</span></span>
             </div>
           </div>
         </div>

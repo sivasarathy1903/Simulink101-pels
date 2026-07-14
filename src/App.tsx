@@ -459,48 +459,60 @@ export default function App() {
 
                   {/* Task Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {tasks.map(({ key, title, Icon }, idx) => (
+                    {tasks.map(({ key, title, subtitle, desc, released, link, Icon }, idx) => (
                       <motion.div
                         key={key}
                         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 + 0.2 }}
                         whileHover={{ y: -5, scale: 1.015 }}
-                        className="relative rounded-xl p-7 flex flex-col gap-5 border overflow-hidden transition-all duration-300 border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:border-white/20"
+                        className={`relative rounded-xl p-7 flex flex-col gap-5 border overflow-hidden transition-all duration-300 ${released ? 'border-primary-red/30 bg-gradient-to-br from-primary-red/[0.05] to-transparent hover:border-primary-red/50' : 'border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:border-white/20'}`}
                       >
                         {/* Background number watermark */}
-                        <span className="absolute -right-3 -bottom-4 font-display font-black text-[120px] text-white/[0.03] leading-none select-none pointer-events-none">{key}</span>
+                        <span className={`absolute -right-3 -bottom-4 font-display font-black text-[120px] ${released ? 'text-primary-red/[0.05]' : 'text-white/[0.03]'} leading-none select-none pointer-events-none`}>{key}</span>
 
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center">
-                            <Icon className="h-5 w-5 text-white/30" />
+                          <div className={`h-10 w-10 rounded-lg ${released ? 'bg-primary-red/[0.1] border-primary-red/20' : 'bg-white/[0.06] border-white/10'} border flex items-center justify-center`}>
+                            <Icon className={`h-5 w-5 ${released ? 'text-primary-red' : 'text-white/30'}`} />
                           </div>
-                          <span className="font-mono text-[10px] font-bold text-white/30 tracking-widest">{title.toUpperCase()}</span>
+                          <span className={`font-mono text-[10px] font-bold ${released ? 'text-primary-red/80' : 'text-white/30'} tracking-widest`}>{title.toUpperCase()}</span>
                         </div>
 
                         <div>
-                          <h3 className="font-display font-bold text-3xl text-white/50">{title}</h3>
+                          <h3 className={`font-display font-bold text-3xl ${released ? 'text-white' : 'text-white/50'}`}>{title}</h3>
 
-                          {/* Jail / locked animation */}
-                          <div className="mt-4 relative flex items-center justify-center h-16 rounded-lg overflow-hidden bg-black/30 border border-white/[0.07]">
-                            {/* Bars */}
-                            {[0,1,2,3,4,5].map(i => (
+                          {released ? (
+                            <div className="mt-4 flex flex-col gap-3">
+                              <h4 className="font-mono text-xs text-primary-red/80 uppercase tracking-wide">{subtitle}</h4>
+                              <p className="text-sm text-white/60 leading-relaxed">{desc}</p>
+                              {link && (
+                                <a href={link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center justify-center gap-2 bg-primary-red hover:bg-red-600 text-white font-mono text-[11px] font-bold uppercase tracking-widest py-3 px-4 rounded-lg transition-colors">
+                                  Access Drive Link
+                                </a>
+                              )}
+                            </div>
+                          ) : (
+                            /* Jail / locked animation */
+                            <div className="mt-4 relative flex items-center justify-center h-16 rounded-lg overflow-hidden bg-black/30 border border-white/[0.07]">
+                              {/* Bars */}
+                              {[0,1,2,3,4,5].map(i => (
+                                <motion.div
+                                  key={i}
+                                  className="absolute top-0 bottom-0 w-[3px] rounded-full bg-gradient-to-b from-white/25 via-white/10 to-white/25"
+                                  style={{ left: `${14 + i * 14}%` }}
+                                  animate={{ scaleY: [1, 0.92, 1], opacity: [0.5, 0.3, 0.5] }}
+                                  transition={{ duration: 2.2, delay: i * 0.18, repeat: Infinity, ease: "easeInOut" }}
+                                />
+                              ))}
+                              {/* Lock icon centre */}
                               <motion.div
-                                key={i}
-                                className="absolute top-0 bottom-0 w-[3px] rounded-full bg-gradient-to-b from-white/25 via-white/10 to-white/25"
-                                style={{ left: `${14 + i * 14}%` }}
-                                animate={{ scaleY: [1, 0.92, 1], opacity: [0.5, 0.3, 0.5] }}
-                                transition={{ duration: 2.2, delay: i * 0.18, repeat: Infinity, ease: "easeInOut" }}
-                              />
-                            ))}
-                            {/* Lock icon centre */}
-                            <motion.div
-                              className="relative z-10 flex flex-col items-center gap-1"
-                              animate={{ y: [0, -2, 0] }}
-                              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                            >
-                              <Lock className="h-5 w-5 text-white/40" />
-                              <span className="font-mono text-[9px] text-white/25 tracking-widest uppercase">Locked</span>
-                            </motion.div>
-                          </div>
+                                className="relative z-10 flex flex-col items-center gap-1"
+                                animate={{ y: [0, -2, 0] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                              >
+                                <Lock className="h-5 w-5 text-white/40" />
+                                <span className="font-mono text-[9px] text-white/25 tracking-widest uppercase">Locked</span>
+                              </motion.div>
+                            </div>
+                          )}
                         </div>
 
                         <div className="pt-3 border-t border-white/[0.06] mt-auto">

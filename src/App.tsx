@@ -313,6 +313,17 @@ export default function App() {
                 </button>
               </>
             )}
+            {currentUser.role === "team" && (
+              <>
+                <div className="hidden sm:flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded font-mono text-[9px] text-blue-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
+                  <span className="font-bold uppercase truncate max-w-[80px]">{teams.find(t => t.id === currentUser.teamId)?.name || "TEAM"}</span>
+                </div>
+                <button onClick={handleLogout} className="font-mono text-[9px] font-bold text-white/60 hover:text-primary-red border border-white/10 bg-white/[0.03] px-3 py-1.5 rounded flex items-center gap-1.5 transition-all cursor-pointer">
+                  <LogOut className="h-3 w-3" /> SIGN OUT
+                </button>
+              </>
+            )}
             {currentUser.role === "viewer" && (
               <button onClick={() => { setLoginError(""); setLoginUsername(""); setLoginPassword(""); setIsLoginModalOpen(true); }}
                 className="font-mono text-[10px] font-bold text-white bg-primary-red hover:bg-red-700 px-4 py-2 rounded flex items-center gap-1.5 transition-all shadow-lg shadow-primary-red/20 cursor-pointer">

@@ -14,6 +14,10 @@ export interface TeamMetrics {
   t3_report?: number;     // out of 30
   t3_result?: number;     // out of 40
 
+  // Unified Submission
+  driveLink?: string;
+  password?: string;
+  
   // Legacy fields (kept for backward compat)
   task1Released?: boolean;
   task1Link?: string;

@@ -42,7 +42,7 @@ export default function App() {
   } | null>(null);
 
   // Auth States
-  const [currentUser, setCurrentUser] = useState<{ role: "admin" | "viewer"; name?: string }>({ role: "viewer" });
+  const [currentUser, setCurrentUser] = useState<{ role: "admin" | "viewer" | "team"; name?: string; teamId?: string }>({ role: "viewer" });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -167,14 +167,17 @@ export default function App() {
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
-    const cleanUser = loginUsername.trim().toLowerCase();
+    const cleanUser = loginUsername.trim();
     if (!cleanUser || !loginPassword.trim()) {
       setLoginError("Please enter both credentials.");
       return;
     }
-    if (cleanUser === "admin" || cleanUser.includes("@")) {
+    
+    // Check if trying to login as admin
+    const isAttemptingAdmin = cleanUser.toLowerCase() === "admin" || cleanUser.includes("@");
+    if (isAttemptingAdmin) {
       try {
-        const email = cleanUser === "admin" ? "admin@simulink101.com" : cleanUser;
+        const email = cleanUser.toLowerCase() === "admin" ? "admin@simulink101.com" : cleanUser;
         const { error } = await supabase.auth.signInWithPassword({ email, password: loginPassword });
         if (error) { setLoginError("Incorrect admin credentials."); return; }
         setLoginSuccess(true);
@@ -182,7 +185,21 @@ export default function App() {
       } catch { setLoginError("Login failed."); }
       return;
     }
-    setLoginError("Only admin access is permitted here.");
+
+    // Try Team Login
+    try {
+      const team = await teamService.loginTeam(cleanUser, loginPassword);
+      if (team) {
+        setLoginSuccess(true);
+        setCurrentUser({ role: "team", name: team.name, teamId: team.id });
+        localStorage.setItem("simverse_user", JSON.stringify({ role: "team", name: team.name, teamId: team.id }));
+        setTimeout(() => { setIsLoginModalOpen(false); setLoginSuccess(false); setLoginUsername(""); setLoginPassword(""); }, 1200);
+        return;
+      }
+      setLoginError("Incorrect team name or password.");
+    } catch {
+      setLoginError("Login failed.");
+    }
   };
 
   const handleLogout = async () => {
@@ -194,15 +211,17 @@ export default function App() {
 
   const handleRegisterTeam = async (newTeamData: { name: string; members: string[] }) => {
     try {
+      const generatedPassword = Math.random().toString(36).slice(-6).toUpperCase();
       await teamService.createTeam({
         name: newTeamData.name.toUpperCase(),
         institution: "SIMVERSE 2026",
         totalPoints: 0,
         status: "Registered",
-        metrics: {},
+        metrics: { password: generatedPassword },
         runHistory: [],
         tags: newTeamData.members,
       });
+      alert(`Team created successfully!\n\nTeam Name: ${newTeamData.name.toUpperCase()}\nPassword: ${generatedPassword}\n\nPlease save this password and share it with the team.`);
     } catch (err) {
       console.error(err);
       alert("Failed to create team.");
@@ -297,7 +316,7 @@ export default function App() {
             {currentUser.role === "viewer" && (
               <button onClick={() => { setLoginError(""); setLoginUsername(""); setLoginPassword(""); setIsLoginModalOpen(true); }}
                 className="font-mono text-[10px] font-bold text-white bg-primary-red hover:bg-red-700 px-4 py-2 rounded flex items-center gap-1.5 transition-all shadow-lg shadow-primary-red/20 cursor-pointer">
-                <ShieldCheck className="h-3.5 w-3.5" /> ADMIN ACCESS
+                <LogIn className="h-3.5 w-3.5" /> LOGIN
               </button>
             )}
           </div>
@@ -457,6 +476,37 @@ export default function App() {
                     </motion.div>
                   )}
 
+                  {/* Team Submission Controls */}
+                  {currentUser.role === "team" && (
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                      className="bg-blue-500/[0.04] border border-blue-500/20 rounded-xl p-6 mb-10">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileCheck className="h-4 w-4 text-blue-400" />
+                        <span className="font-mono text-xs font-bold text-white tracking-widest uppercase">Your Team Submission</span>
+                      </div>
+                      <p className="font-mono text-[10px] text-white/50 mb-4">Please provide a single Google Drive link containing all your simulation files, reports, and results. Ensure the link is accessible by the judges.</p>
+                      
+                      <div className="flex gap-3 items-center">
+                        <input type="text" placeholder="https://drive.google.com/..." 
+                          value={teams.find(t => t.id === currentUser.teamId)?.metrics?.driveLink || ""}
+                          onChange={async (e) => {
+                            const link = e.target.value;
+                            // Optimistic update in UI
+                            const updatedTeams = teams.map(t => t.id === currentUser.teamId ? { ...t, metrics: { ...t.metrics, driveLink: link } } : t);
+                            // We need to trigger an update to supabase
+                            try {
+                              if (currentUser.teamId) {
+                                await teamService.updateTeamSubmission(currentUser.teamId, link);
+                              }
+                            } catch (err) {
+                              console.error("Failed to update submission", err);
+                            }
+                          }}
+                          className="bg-[#070709] border border-white/10 text-sm text-white px-4 py-2.5 rounded outline-none focus:border-blue-400/60 font-mono flex-grow" />
+                      </div>
+                    </motion.div>
+                  )}
+
                   {/* Task Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {tasks.map(({ key, title, subtitle, desc, released, link, Icon }, idx) => (
@@ -590,17 +640,17 @@ export default function App() {
                     <UserCheck className="h-6 w-6 text-green-400" />
                   </div>
                   <h4 className="font-display font-bold text-white">Access Granted</h4>
-                  <p className="font-mono text-[10px] text-white/40 mt-1">Entering admin panel…</p>
+                  <p className="font-mono text-[10px] text-white/40 mt-1">Entering portal…</p>
                 </motion.div>
               ) : (
                 <>
                   <div className="mb-7 text-center">
                     <div className="h-11 w-11 bg-primary-red/10 border border-primary-red/25 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <ShieldCheck className="h-5 w-5 text-primary-red" />
+                      <LogIn className="h-5 w-5 text-primary-red" />
                     </div>
                     <span className="font-mono text-[9px] text-primary-red uppercase tracking-widest">Simverse 2026</span>
-                    <h3 className="font-display font-black text-xl text-white mt-0.5">Admin Access</h3>
-                    <p className="font-mono text-[10px] text-white/35 mt-1">Restricted to event coordinators only</p>
+                    <h3 className="font-display font-black text-xl text-white mt-0.5">Login</h3>
+                    <p className="font-mono text-[10px] text-white/35 mt-1">Admin or Team Access</p>
                   </div>
 
                   {loginError && (

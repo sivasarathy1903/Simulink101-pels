@@ -180,6 +180,16 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                 )}
               </div>
 
+              {/* Show Team Submission Link */}
+              {team.metrics?.driveLink && (
+                <div className="bg-blue-500/[0.04] border border-blue-500/20 rounded-lg p-4 mb-5">
+                  <p className="font-mono text-[10px] text-blue-400 uppercase tracking-widest mb-1.5">Team Submission</p>
+                  <a href={team.metrics.driveLink} target="_blank" rel="noopener noreferrer" className="text-white text-sm hover:text-blue-300 transition-colors break-all underline decoration-white/20 underline-offset-4">
+                    {team.metrics.driveLink}
+                  </a>
+                </div>
+              )}
+
               {/* Live total preview */}
               <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 flex justify-between items-center mb-5">
                 <span className="font-mono text-[10px] text-white/40">Preview Total</span>

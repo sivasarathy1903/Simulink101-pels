@@ -126,5 +126,53 @@ export const teamService = {
       console.error("Error deleting team:", error);
       throw error;
     }
+  },
+
+  async loginTeam(name: string, password: string): Promise<Team | null> {
+    const { data, error } = await supabase
+      .from("teams")
+      .select("*")
+      .ilike("name", name)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const teamRow = data as SupabaseTeamRow;
+    if (teamRow.metrics?.password === password) {
+      return mapRowToTeam(teamRow, 0);
+    }
+    return null;
+  },
+
+  async updateTeamSubmission(id: string, driveLink: string): Promise<void> {
+    // First, fetch the current metrics
+    const { data, error: fetchError } = await supabase
+      .from("teams")
+      .select("metrics")
+      .eq("id", id)
+      .single();
+      
+    if (fetchError || !data) {
+      console.error("Error fetching team for submission:", fetchError);
+      throw fetchError || new Error("Team not found");
+    }
+
+    const currentMetrics = data.metrics || {};
+    const updatedMetrics = { ...currentMetrics, driveLink };
+
+    const { error: updateError } = await supabase
+      .from("teams")
+      .update({
+        metrics: updatedMetrics,
+        last_updated: "Just now",
+      })
+      .eq("id", id);
+
+    if (updateError) {
+      console.error("Error updating team submission:", updateError);
+      throw updateError;
+    }
   }
 };

@@ -272,9 +272,9 @@ export default function App() {
   const filteredTeams = teams.filter(t => t.name !== "__EVENT_CONFIG__");
 
   const tasks = [
-    { key: 1, released: task1Released, link: task1Link, title: "Task 1", subtitle: "Circuit Design Phase", desc: "Design and simulate the primary power converter topology. Submit your Simulink model and report.", Icon: Cpu },
-    { key: 2, released: task2Released, link: task2Link, title: "Task 2", subtitle: "Simulation Accuracy Phase", desc: "Optimize your control loop. Achieve target dynamic response with minimal overshoot and settling time.", Icon: Gauge },
-    { key: 3, released: task3Released, link: task3Link, title: "Task 3", subtitle: "Results & Report Phase", desc: "Submit your final evaluation report with all simulation results, waveforms, and analysis.", Icon: FileCheck },
+    { key: 1, released: task1Released, linkKey: "task1Link", title: "Task 1", subtitle: "Circuit Design Phase", desc: "Design and simulate the primary power converter topology. Submit your Simulink model and report.", Icon: Cpu },
+    { key: 2, released: task2Released, linkKey: "task2Link", title: "Task 2", subtitle: "Simulation Accuracy Phase", desc: "Optimize your control loop. Achieve target dynamic response with minimal overshoot and settling time.", Icon: Gauge },
+    { key: 3, released: task3Released, linkKey: "task3Link", title: "Task 3", subtitle: "Results & Report Phase", desc: "Submit your final evaluation report with all simulation results, waveforms, and analysis.", Icon: FileCheck },
   ];
 
   return (
@@ -455,10 +455,10 @@ export default function App() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {[
-                          { label: "TASK 1", relKey: "task1Released", linkKey: "task1Link", released: task1Released, link: task1Link },
-                          { label: "TASK 2", relKey: "task2Released", linkKey: "task2Link", released: task2Released, link: task2Link },
-                          { label: "TASK 3", relKey: "task3Released", linkKey: "task3Link", released: task3Released, link: task3Link },
-                        ].map(({ label, relKey, linkKey, released, link }) => (
+                          { label: "TASK 1", relKey: "task1Released", released: task1Released },
+                          { label: "TASK 2", relKey: "task2Released", released: task2Released },
+                          { label: "TASK 3", relKey: "task3Released", released: task3Released },
+                        ].map(({ label, relKey, released }) => (
                           <div key={label} className="bg-white/[0.03] border border-white/10 rounded-lg p-4 flex flex-col gap-3">
                             <span className="font-mono text-[10px] text-white/50 font-bold">{label}</span>
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -467,49 +467,17 @@ export default function App() {
                                 className="accent-primary-red w-3.5 h-3.5" />
                               <span className="font-mono text-[11px] text-white">{released ? "🟢 Released" : "🔴 Locked"}</span>
                             </label>
-                            <input type="text" placeholder="Google Drive link…" value={link}
-                              onChange={e => handleUpdateConfig({ [linkKey]: e.target.value })}
-                              className="bg-[#070709] border border-white/10 text-[11px] text-white px-2.5 py-1.5 rounded outline-none focus:border-primary-red/60 font-mono w-full" />
                           </div>
                         ))}
                       </div>
                     </motion.div>
                   )}
 
-                  {/* Team Submission Controls */}
-                  {currentUser.role === "team" && (
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                      className="bg-blue-500/[0.04] border border-blue-500/20 rounded-xl p-6 mb-10">
-                      <div className="flex items-center gap-2 mb-3">
-                        <FileCheck className="h-4 w-4 text-blue-400" />
-                        <span className="font-mono text-xs font-bold text-white tracking-widest uppercase">Your Team Submission</span>
-                      </div>
-                      <p className="font-mono text-[10px] text-white/50 mb-4">Please provide a single Google Drive link containing all your simulation files, reports, and results. Ensure the link is accessible by the judges.</p>
-                      
-                      <div className="flex gap-3 items-center">
-                        <input type="text" placeholder="https://drive.google.com/..." 
-                          value={teams.find(t => t.id === currentUser.teamId)?.metrics?.driveLink || ""}
-                          onChange={async (e) => {
-                            const link = e.target.value;
-                            // Optimistic update in UI
-                            const updatedTeams = teams.map(t => t.id === currentUser.teamId ? { ...t, metrics: { ...t.metrics, driveLink: link } } : t);
-                            // We need to trigger an update to supabase
-                            try {
-                              if (currentUser.teamId) {
-                                await teamService.updateTeamSubmission(currentUser.teamId, link);
-                              }
-                            } catch (err) {
-                              console.error("Failed to update submission", err);
-                            }
-                          }}
-                          className="bg-[#070709] border border-white/10 text-sm text-white px-4 py-2.5 rounded outline-none focus:border-blue-400/60 font-mono flex-grow" />
-                      </div>
-                    </motion.div>
-                  )}
-
                   {/* Task Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {tasks.map(({ key, title, subtitle, desc, released, link, Icon }, idx) => (
+                    {tasks.map(({ key, title, subtitle, desc, released, linkKey, Icon }, idx) => {
+                      const teamLink = currentUser.role === "team" ? (teams.find(t => t.id === currentUser.teamId)?.metrics?.[linkKey as keyof Team["metrics"]] as string || "") : "";
+                      return (
                       <motion.div
                         key={key}
                         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 + 0.2 }}
@@ -533,10 +501,28 @@ export default function App() {
                             <div className="mt-4 flex flex-col gap-3">
                               <h4 className="font-mono text-xs text-primary-red/80 uppercase tracking-wide">{subtitle}</h4>
                               <p className="text-sm text-white/60 leading-relaxed">{desc}</p>
-                              {link && (
-                                <a href={link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center justify-center gap-2 bg-primary-red hover:bg-red-600 text-white font-mono text-[11px] font-bold uppercase tracking-widest py-3 px-4 rounded-lg transition-colors">
-                                  Access Drive Link
-                                </a>
+                              
+                              {currentUser.role === "team" && (
+                                <div className="mt-3">
+                                  <label className="font-mono text-[9px] text-blue-400 uppercase tracking-widest mb-1.5 block">Submit Drive Link</label>
+                                  <input type="text" placeholder="https://drive.google.com/..." 
+                                    value={teamLink}
+                                    onChange={async (e) => {
+                                      const val = e.target.value;
+                                      try {
+                                        if (currentUser.teamId) {
+                                          const t = teams.find(t => t.id === currentUser.teamId);
+                                          if (t) {
+                                            const updatedMetrics = { ...t.metrics, [linkKey]: val };
+                                            await teamService.updateTeamScores(t.id, updatedMetrics);
+                                          }
+                                        }
+                                      } catch (err) {
+                                        console.error("Failed to update submission", err);
+                                      }
+                                    }}
+                                    className="bg-[#070709] border border-white/10 text-xs text-white px-3 py-2 rounded outline-none focus:border-blue-400/60 font-mono w-full" />
+                                </div>
                               )}
                             </div>
                           ) : (
@@ -582,7 +568,7 @@ export default function App() {
                           </div>
                         </div>
                       </motion.div>
-                    ))}
+                    );})}
                   </div>
 
                   {/* Scoring info */}

@@ -135,16 +135,16 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                         >
                           <div className="bg-white/[0.02] border border-white/[0.04] rounded-lg p-4 grid grid-cols-3 gap-2">
                             <div className="text-center">
-                              <p className="font-mono text-[10px] text-white/40 uppercase mb-1">Circuit</p>
-                              <p className="font-display text-2xl font-bold text-white">{Number(team.metrics[`${key}_circuit` as keyof Team["metrics"]]) || 0}<span className="text-xs text-white/30">/30</span></p>
+                              <p className="font-mono text-xs text-white/50 uppercase mb-1 tracking-widest">Circuit</p>
+                              <p className="font-display text-3xl md:text-4xl font-bold text-white">{Number(team.metrics[`${key}_circuit` as keyof Team["metrics"]]) || 0}<span className="text-sm font-normal text-white/30 ml-1">/ 30</span></p>
                             </div>
                             <div className="text-center">
-                              <p className="font-mono text-[10px] text-white/40 uppercase mb-1">Report</p>
-                              <p className="font-display text-2xl font-bold text-white">{Number(team.metrics[`${key}_report` as keyof Team["metrics"]]) || 0}<span className="text-xs text-white/30">/30</span></p>
+                              <p className="font-mono text-xs text-white/50 uppercase mb-1 tracking-widest">Report</p>
+                              <p className="font-display text-3xl md:text-4xl font-bold text-white">{Number(team.metrics[`${key}_report` as keyof Team["metrics"]]) || 0}<span className="text-sm font-normal text-white/30 ml-1">/ 30</span></p>
                             </div>
                             <div className="text-center">
-                              <p className="font-mono text-[10px] text-white/40 uppercase mb-1">Result</p>
-                              <p className="font-display text-2xl font-bold text-white">{Number(team.metrics[`${key}_result` as keyof Team["metrics"]]) || 0}<span className="text-xs text-white/30">/40</span></p>
+                              <p className="font-mono text-xs text-white/50 uppercase mb-1 tracking-widest">Result</p>
+                              <p className="font-display text-3xl md:text-4xl font-bold text-white">{Number(team.metrics[`${key}_result` as keyof Team["metrics"]]) || 0}<span className="text-sm font-normal text-white/30 ml-1">/ 40</span></p>
                             </div>
                           </div>
                         </motion.div>
@@ -180,15 +180,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                 )}
               </div>
 
-              {/* Show Team Submission Link */}
-              {team.metrics?.driveLink && (
-                <div className="bg-blue-500/[0.04] border border-blue-500/20 rounded-lg p-4 mb-5">
-                  <p className="font-mono text-[10px] text-blue-400 uppercase tracking-widest mb-1.5">Team Submission</p>
-                  <a href={team.metrics.driveLink} target="_blank" rel="noopener noreferrer" className="text-white text-sm hover:text-blue-300 transition-colors break-all underline decoration-white/20 underline-offset-4">
-                    {team.metrics.driveLink}
-                  </a>
-                </div>
-              )}
+
 
               {/* Live total preview */}
               <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 flex justify-between items-center mb-5">
@@ -216,20 +208,33 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                       <AnimatePresence>
                         {isOpen && (
                           <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
-                            <div className="p-4 pt-0 grid grid-cols-3 gap-3 border-t border-white/[0.06]">
-                              {[
-                                { label: "Circuit Design", field: `${key}_circuit` as keyof Team["metrics"], max: 30 },
-                                { label: "Report Submission", field: `${key}_report` as keyof Team["metrics"], max: 30 },
-                                { label: "Result", field: `${key}_result` as keyof Team["metrics"], max: 40 },
-                              ].map(({ label: fl, field, max }) => (
-                                <div key={field as string} className="flex flex-col gap-1.5">
-                                  <label className="font-mono text-[9px] text-white/35 uppercase">{fl}<span className="text-white/20"> /{max}</span></label>
-                                  <input type="number" min={0} max={max}
-                                    value={Number(draftMetrics[field]) || 0}
-                                    onChange={e => handleField(field, max, e.target.value)}
-                                    className="bg-[#070709] border border-white/10 focus:border-primary-red/60 rounded-lg px-3 py-2 text-sm text-white font-mono outline-none w-full" />
+                            <div className="p-4 pt-0 border-t border-white/[0.06]">
+                              {/* Per-Task Drive Link */}
+                              {team.metrics && team.metrics[`task${key.replace('t', '')}Link` as keyof Team["metrics"]] && (
+                                <div className="mb-4 mt-4 bg-blue-500/[0.04] border border-blue-500/20 rounded-lg p-3">
+                                  <p className="font-mono text-[10px] text-blue-400 uppercase tracking-widest mb-1">Submitted Drive Link</p>
+                                  <a href={team.metrics[`task${key.replace('t', '')}Link` as keyof Team["metrics"]] as string} target="_blank" rel="noopener noreferrer" 
+                                    className="text-white text-sm hover:text-blue-300 transition-colors break-all underline decoration-white/20 underline-offset-4">
+                                    {team.metrics[`task${key.replace('t', '')}Link` as keyof Team["metrics"]] as string}
+                                  </a>
                                 </div>
-                              ))}
+                              )}
+                              
+                              <div className="grid grid-cols-3 gap-4">
+                                {[
+                                  { label: "Circuit Design", field: `${key}_circuit` as keyof Team["metrics"], max: 30 },
+                                  { label: "Report", field: `${key}_report` as keyof Team["metrics"], max: 30 },
+                                  { label: "Result", field: `${key}_result` as keyof Team["metrics"], max: 40 },
+                                ].map(({ label: fl, field, max }) => (
+                                  <div key={field as string} className="flex flex-col gap-1.5">
+                                    <label className="font-mono text-xs font-bold text-white/60 uppercase tracking-widest">{fl}<span className="text-primary-red/70 ml-1">/ {max}</span></label>
+                                    <input type="number" min={0} max={max}
+                                      value={Number(draftMetrics[field]) || 0}
+                                      onChange={e => handleField(field, max, e.target.value)}
+                                      className="bg-[#070709] border border-white/20 focus:border-primary-red/80 rounded-lg px-4 py-3 text-lg font-bold text-white font-mono outline-none w-full shadow-inner" />
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </motion.div>
                         )}

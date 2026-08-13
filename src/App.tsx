@@ -54,17 +54,26 @@ export default function App() {
 
   // Draft state for team link inputs (avoids read-only binding to teams state)
   const [draftLinks, setDraftLinks] = useState<Record<string, string>>({});
+  // Which links have been submitted (locked / not in edit mode)
+  const [submittedLinks, setSubmittedLinks] = useState<Record<string, string>>({});
+  // Which tasks are currently saving
+  const [savingLink, setSavingLink] = useState<Record<string, boolean>>({});
 
-  // When team logs in, initialize draftLinks from their existing metrics
+  // When team logs in, initialize draftLinks & submittedLinks from their existing metrics
   useEffect(() => {
     if (currentUser.role === "team" && currentUser.teamId) {
       const t = teams.find(t => t.id === currentUser.teamId);
       if (t) {
-        setDraftLinks({
+        const existing = {
           task1Link: (t.metrics?.task1Link as string) || "",
           task2Link: (t.metrics?.task2Link as string) || "",
           task3Link: (t.metrics?.task3Link as string) || "",
-        });
+        };
+        setDraftLinks(existing);
+        // Mark already-submitted links as confirmed
+        const confirmed: Record<string, string> = {};
+        Object.entries(existing).forEach(([k, v]) => { if (v) confirmed[k] = v; });
+        setSubmittedLinks(confirmed);
       }
     }
   }, [currentUser.teamId, currentUser.role, teams]);
@@ -504,7 +513,6 @@ export default function App() {
                   {/* Task Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {tasks.map(({ key, title, subtitle, desc, released, linkKey, Icon }, idx) => {
-                      const draftLinkValue = draftLinks[linkKey] ?? "";
                       return (
                       <motion.div
                         key={key}
@@ -531,29 +539,73 @@ export default function App() {
                               <p className="text-sm text-white/60 leading-relaxed">{desc}</p>
                               
                               {currentUser.role === "team" && (
-                                <div className="mt-3">
-                                  <label className="font-mono text-[9px] text-blue-400 uppercase tracking-widest mb-1.5 block">Submit Drive Link</label>
-                                  <input
-                                    type="text"
-                                    placeholder="https://drive.google.com/..."
-                                    value={draftLinkValue}
-                                    onChange={(e) => {
-                                      setDraftLinks(prev => ({ ...prev, [linkKey]: e.target.value }));
-                                    }}
-                                    onBlur={async () => {
-                                      try {
-                                        if (currentUser.teamId) {
-                                          const t = teams.find(t => t.id === currentUser.teamId);
-                                          if (t) {
-                                            const updatedMetrics = { ...t.metrics, [linkKey]: draftLinkValue };
-                                            await teamService.updateTeamScores(t.id, updatedMetrics);
-                                          }
-                                        }
-                                      } catch (err) {
-                                        console.error("Failed to save submission", err);
-                                      }
-                                    }}
-                                    className="bg-[#070709] border border-white/10 text-xs text-white px-3 py-2.5 rounded outline-none focus:border-blue-400/60 font-mono w-full transition-colors" />
+                                <div className="mt-4 border-t border-white/[0.06] pt-4">
+                                  <label className="font-mono text-[9px] text-blue-400 uppercase tracking-widest mb-2 block">Drive Link Submission</label>
+
+                                  {submittedLinks[linkKey] && !draftLinks[`${linkKey}_editing`] ? (
+                                    /* ── SUBMITTED STATE ── */
+                                    <div className="bg-green-500/[0.06] border border-green-500/25 rounded-lg p-3">
+                                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                                        <span className="font-mono text-[9px] text-green-400 uppercase tracking-widest flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" /> Submitted
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => setDraftLinks(prev => ({ ...prev, [`${linkKey}_editing`]: "true" }))}
+                                          className="font-mono text-[9px] text-white/40 hover:text-white border border-white/10 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                                        >Edit</button>
+                                      </div>
+                                      <a href={submittedLinks[linkKey]} target="_blank" rel="noopener noreferrer"
+                                        className="text-white/70 text-xs break-all underline underline-offset-2 decoration-white/20 hover:text-white transition-colors">
+                                        {submittedLinks[linkKey]}
+                                      </a>
+                                    </div>
+                                  ) : (
+                                    /* ── INPUT + SUBMIT STATE ── */
+                                    <div className="flex flex-col gap-2">
+                                      <input
+                                        type="text"
+                                        placeholder="https://drive.google.com/..."
+                                        value={draftLinks[linkKey] ?? ""}
+                                        onChange={(e) => setDraftLinks(prev => ({ ...prev, [linkKey]: e.target.value }))}
+                                        className="bg-[#070709] border border-white/15 text-xs text-white px-3 py-2.5 rounded-lg outline-none focus:border-blue-400/70 font-mono w-full transition-colors"
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          type="button"
+                                          disabled={!draftLinks[linkKey]?.trim() || savingLink[linkKey]}
+                                          onClick={async () => {
+                                            const val = draftLinks[linkKey]?.trim();
+                                            if (!val || !currentUser.teamId) return;
+                                            setSavingLink(prev => ({ ...prev, [linkKey]: true }));
+                                            try {
+                                              const t = teams.find(t => t.id === currentUser.teamId);
+                                              if (t) {
+                                                const updatedMetrics = { ...t.metrics, [linkKey]: val };
+                                                await teamService.updateTeamScores(t.id, updatedMetrics);
+                                                setSubmittedLinks(prev => ({ ...prev, [linkKey]: val }));
+                                                setDraftLinks(prev => { const n = { ...prev }; delete n[`${linkKey}_editing`]; return n; });
+                                              }
+                                            } catch (err) {
+                                              console.error("Failed to save submission", err);
+                                            } finally {
+                                              setSavingLink(prev => ({ ...prev, [linkKey]: false }));
+                                            }
+                                          }}
+                                          className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-mono text-[10px] font-bold uppercase tracking-widest py-2 px-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                                        >
+                                          {savingLink[linkKey] ? "Saving…" : "Submit Link"}
+                                        </button>
+                                        {submittedLinks[linkKey] && (
+                                          <button
+                                            type="button"
+                                            onClick={() => setDraftLinks(prev => { const n = { ...prev }; delete n[`${linkKey}_editing`]; n[linkKey] = submittedLinks[linkKey]; return n; })}
+                                            className="font-mono text-[10px] text-white/40 hover:text-white border border-white/10 px-3 py-2 rounded-lg transition-colors cursor-pointer"
+                                          >Cancel</button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>

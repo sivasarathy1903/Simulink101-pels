@@ -307,25 +307,25 @@ export default function App() {
 
       {/* ─── NAV ─── */}
       <nav className="fixed top-0 w-full z-50 bg-[#070709]/80 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
-        <div className="flex justify-between items-center px-6 md:px-12 py-3.5 max-w-[1440px] mx-auto">
-          <div onClick={() => { setCurrentTab("home"); setSelectedTeam(null); }} className="flex items-center gap-3.5 cursor-pointer group">
-            <img alt="IEEE PELS" className="h-9 w-9 rounded-full border border-white/10 group-hover:border-primary-red/40 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhT7QIUE14McBjVbaSVgLbQU9Rskq807b4yTeIq433ZYqnXk0jH5wCkIHv7aFintnvmMEPMB8U6dzNDoCltxJIlTa1QfcbTFv-BMzBuvE-m-GH5LG8dcz-njxhfytuRde4mq-BPrltR_gDGpVQ7dZuCNEtLZy3K7ttEPoq6_sas0yedeCB344eHCiEQx9EOWuuiE-CXTRnBmGJqnhwcoFV2fUFiWM_YObS8Q1g-wvE74BsUdQU2Ic2Xg-kKlB3ZqJj3uA" />
+        <div className="flex justify-between items-center px-3 sm:px-6 md:px-12 py-3 max-w-[1440px] mx-auto">
+          <div onClick={() => { setCurrentTab("home"); setSelectedTeam(null); }} className="flex items-center gap-2 sm:gap-3.5 cursor-pointer group shrink-0">
+            <img alt="IEEE PELS" className="h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-white/10 group-hover:border-primary-red/40 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhT7QIUE14McBjVbaSVgLbQU9Rskq807b4yTeIq433ZYqnXk0jH5wCkIHv7aFintnvmMEPMB8U6dzNDoCltxJIlTa1QfcbTFv-BMzBuvE-m-GH5LG8dcz-njxhfytuRde4mq-BPrltR_gDGpVQ7dZuCNEtLZy3K7ttEPoq6_sas0yedeCB344eHCiEQx9EOWuuiE-CXTRnBmGJqnhwcoFV2fUFiWM_YObS8Q1g-wvE74BsUdQU2Ic2Xg-kKlB3ZqJj3uA" />
             <div>
-              <div className="font-display font-black text-base text-white leading-none tracking-widest group-hover:text-primary-red transition-colors">SIMVERSE</div>
-              <div className="font-mono text-[8px] text-white/35 tracking-widest">IEEE POWER ELECTRONICS SOCIETY</div>
+              <div className="font-display font-black text-sm sm:text-base text-white leading-none tracking-widest group-hover:text-primary-red transition-colors">SIMVERSE</div>
+              <div className="font-mono text-[7px] sm:text-[8px] text-white/35 tracking-wider sm:tracking-widest">IEEE POWER ELECTRONICS</div>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {["home", "leaderboard"].map(tab => (
               <button key={tab} onClick={() => { setCurrentTab(tab as any); setSelectedTeam(null); }}
-                className={`font-mono text-[10px] font-bold tracking-widest px-4 py-1.5 rounded transition-all cursor-pointer uppercase ${currentTab === tab && !selectedTeam ? "text-primary-red border-b border-primary-red" : "text-white/50 hover:text-white"}`}>
+                className={`font-mono text-[9px] sm:text-[10px] font-bold tracking-wider sm:tracking-widest px-2.5 sm:px-4 py-1.5 rounded transition-all cursor-pointer uppercase ${currentTab === tab && !selectedTeam ? "text-primary-red border-b border-primary-red" : "text-white/50 hover:text-white"}`}>
                 {tab === "home" ? "Home" : "Leaderboard"}
               </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {currentUser.role === "admin" && (
               <>
                 <div className="hidden sm:flex items-center gap-1.5 bg-primary-red/10 border border-primary-red/25 px-2.5 py-1 rounded font-mono text-[9px] text-primary-red">
@@ -333,8 +333,8 @@ export default function App() {
                   <span className="font-bold">ADMIN</span>
                 </div>
                 <button onClick={handleResetChallenge} className="hidden md:block font-mono text-[9px] text-white/25 hover:text-primary-red border border-white/5 px-2 py-1 rounded transition-all cursor-pointer">SEED DB</button>
-                <button onClick={handleLogout} className="font-mono text-[9px] font-bold text-white/60 hover:text-primary-red border border-white/10 bg-white/[0.03] px-3 py-1.5 rounded flex items-center gap-1.5 transition-all cursor-pointer">
-                  <LogOut className="h-3 w-3" /> SIGN OUT
+                <button onClick={handleLogout} className="font-mono text-[9px] font-bold text-white/60 hover:text-primary-red border border-white/10 bg-white/[0.03] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded flex items-center gap-1.5 transition-all cursor-pointer">
+                  <LogOut className="h-3 w-3" /> <span className="hidden xs:inline">SIGN OUT</span>
                 </button>
               </>
             )}
@@ -344,15 +344,15 @@ export default function App() {
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
                   <span className="font-bold uppercase truncate max-w-[80px]">{teams.find(t => t.id === currentUser.teamId)?.name || "TEAM"}</span>
                 </div>
-                <button onClick={handleLogout} className="font-mono text-[9px] font-bold text-white/60 hover:text-primary-red border border-white/10 bg-white/[0.03] px-3 py-1.5 rounded flex items-center gap-1.5 transition-all cursor-pointer">
-                  <LogOut className="h-3 w-3" /> SIGN OUT
+                <button onClick={handleLogout} className="font-mono text-[9px] font-bold text-white/60 hover:text-primary-red border border-white/10 bg-white/[0.03] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded flex items-center gap-1.5 transition-all cursor-pointer">
+                  <LogOut className="h-3 w-3" /> <span className="hidden xs:inline">SIGN OUT</span>
                 </button>
               </>
             )}
             {currentUser.role === "viewer" && (
               <button onClick={() => { setLoginError(""); setLoginUsername(""); setLoginPassword(""); setIsLoginModalOpen(true); }}
-                className="font-mono text-[10px] font-bold text-white bg-primary-red hover:bg-red-700 px-4 py-2 rounded flex items-center gap-1.5 transition-all shadow-lg shadow-primary-red/20 cursor-pointer">
-                <LogIn className="h-3.5 w-3.5" /> LOGIN
+                className="font-mono text-[9px] sm:text-[10px] font-bold text-white bg-primary-red hover:bg-red-700 px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1.5 transition-all shadow-lg shadow-primary-red/20 cursor-pointer">
+                <LogIn className="h-3 sm:h-3.5 w-3 sm:w-3.5" /> LOGIN
               </button>
             )}
           </div>
@@ -407,19 +407,19 @@ export default function App() {
                       <img
                         alt="IEEE PELS Logo"
                         src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWFhypqX49CLE1dA5h3Oo_p3Npdqs-zfB5A4aibOI5YUyN8LXhfqByUJrbE1xMNSFe3OI32os9ob8caLvQw8Z6DUhISk5_OZONeWi6w0dBmrsPu-5ljDhj3-YmMjT6QejkL6RMH4BV7ihr0d2_cUae1BKjVz1LX3i6ncb-mBoZBzBGFkocvzdJobfcDsdL2DFCQ2o54PskiTpKDIwdjMfm2JbpKiVDyESbWX6H92vW3nu4vuBoVdG3gi0MhS2zksFiIJA"
-                        className="relative h-28 w-28 rounded-full border border-white/15 shadow-2xl shadow-primary-red/20 object-contain p-1"
+                        className="relative h-20 w-20 sm:h-28 sm:w-28 rounded-full border border-white/15 shadow-2xl shadow-primary-red/20 object-contain p-1"
                       />
                     </div>
                   </motion.div>
 
                   {/* SIMVERSE — professional staggered reveal */}
-                  <div className="flex justify-center items-end gap-0 mb-6 overflow-visible" aria-label="SIMVERSE">
+                  <div className="flex justify-center items-end gap-0 mb-4 sm:mb-6 overflow-visible max-w-full" aria-label="SIMVERSE">
                     {"SIMVERSE".split("").map((ch, i) => (
                       <motion.span
                         key={i}
                         className="font-display font-black leading-none select-none"
                         style={{
-                          fontSize: "clamp(64px, 12vw, 128px)",
+                          fontSize: "clamp(32px, 11vw, 128px)",
                           letterSpacing: "-0.02em",
                           background: "linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0.55) 100%)",
                           WebkitBackgroundClip: "text",
@@ -438,26 +438,26 @@ export default function App() {
 
                   {/* Glowing underline */}
                   <motion.div
-                    className="h-px w-0 bg-gradient-to-r from-transparent via-primary-red to-transparent mb-8"
+                    className="h-px w-0 bg-gradient-to-r from-transparent via-primary-red to-transparent mb-6 sm:mb-8"
                     animate={{ width: "60%" }}
                     transition={{ delay: 0.75, duration: 0.8, ease: "easeOut" }}
                   />
 
                   {/* Subtext */}
                   <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.6 }}
-                    className="text-white/55 text-base md:text-lg max-w-xl leading-relaxed mb-10">
+                    className="text-white/55 text-sm sm:text-base md:text-lg max-w-xl leading-relaxed mb-8 sm:mb-10 px-2">
                     A multi-phase power electronics simulation challenge — design, optimize, and prove your engineering excellence with MATLAB Simulink.
                   </motion.p>
 
                   {/* CTAs */}
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.5 }}
-                    className="flex flex-col sm:flex-row gap-4">
+                    className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0">
                     <button onClick={() => setCurrentTab("leaderboard")}
-                      className="btn-primary-gradient text-white font-mono text-xs font-bold tracking-widest px-8 py-3.5 rounded flex items-center gap-2 group cursor-pointer hover:scale-[1.02] transition-transform shadow-lg shadow-primary-red/25">
+                      className="btn-primary-gradient text-white font-mono text-xs font-bold tracking-widest px-6 sm:px-8 py-3.5 rounded flex items-center justify-center gap-2 group cursor-pointer hover:scale-[1.02] transition-transform shadow-lg shadow-primary-red/25 w-full sm:w-auto">
                       <Trophy className="h-4 w-4 group-hover:scale-110 transition-transform" /> VIEW LEADERBOARD
                     </button>
                     <button onClick={scrollToSection}
-                      className="text-white font-mono text-xs font-bold tracking-widest px-8 py-3.5 rounded flex items-center gap-2 cursor-pointer border border-white/15 hover:border-white/30 hover:bg-white/[0.04] transition-all">
+                      className="text-white font-mono text-xs font-bold tracking-widest px-6 sm:px-8 py-3.5 rounded flex items-center justify-center gap-2 cursor-pointer border border-white/15 hover:border-white/30 hover:bg-white/[0.04] transition-all w-full sm:w-auto">
                       <Info className="h-4 w-4 text-primary-red" /> EXPLORE CHALLENGES
                     </button>
                   </motion.div>
@@ -472,16 +472,16 @@ export default function App() {
               </section>
 
               {/* ─── PHASE TO CHALLENGE ─── */}
-              <section id="challenge-section" className="py-24 px-6 md:px-12 border-t border-white/[0.06] scroll-mt-14">
+              <section id="challenge-section" className="py-12 sm:py-24 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] scroll-mt-14">
                 <div className="max-w-6xl mx-auto">
 
-                  <div className="flex flex-col md:flex-row items-end justify-between mb-12">
+                  <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 sm:mb-12 gap-3 sm:gap-0">
                     <div>
-                      <span className="font-mono text-[10px] text-primary-red tracking-widest uppercase mb-2 block">Event Flow</span>
-                      <h2 className="font-display font-black text-4xl md:text-5xl text-white tracking-tight">Phase 2 Challenge</h2>
-                      <p className="font-mono text-xs text-white/40 mt-2">Tasks unlock sequentially — each phase builds on the last.</p>
+                      <span className="font-mono text-[10px] text-primary-red tracking-widest uppercase mb-1.5 sm:mb-2 block">Event Flow</span>
+                      <h2 className="font-display font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight">Phase 2 Challenge</h2>
+                      <p className="font-mono text-[11px] sm:text-xs text-white/40 mt-1 sm:mt-2">Tasks unlock sequentially — each phase builds on the last.</p>
                     </div>
-                    <button onClick={() => setCurrentTab("leaderboard")} className="font-mono text-xs text-white/40 hover:text-primary-red flex items-center gap-2 mt-4 md:mt-0 cursor-pointer group transition-colors">
+                    <button onClick={() => setCurrentTab("leaderboard")} className="font-mono text-xs text-white/40 hover:text-primary-red flex items-center gap-2 mt-2 md:mt-0 cursor-pointer group transition-colors">
                       LEADERBOARD <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                     </button>
                   </div>
@@ -489,18 +489,18 @@ export default function App() {
                   {/* Admin Controls */}
                   {currentUser.role === "admin" && (
                     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                      className="bg-primary-red/[0.04] border border-primary-red/20 rounded-xl p-6 mb-10">
-                      <div className="flex items-center gap-2 mb-5">
+                      className="bg-primary-red/[0.04] border border-primary-red/20 rounded-xl p-4 sm:p-6 mb-8 sm:mb-10">
+                      <div className="flex items-center gap-2 mb-4 sm:mb-5">
                         <Sliders className="h-4 w-4 text-primary-red" />
                         <span className="font-mono text-xs font-bold text-white tracking-widest uppercase">Admin Task Controls</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
                         {[
                           { label: "TASK 1", relKey: "task1Released", released: task1Released },
                           { label: "TASK 2", relKey: "task2Released", released: task2Released },
                           { label: "TASK 3", relKey: "task3Released", released: task3Released },
                         ].map(({ label, relKey, released }) => (
-                          <div key={label} className="bg-white/[0.03] border border-white/10 rounded-lg p-4 flex flex-col gap-3">
+                          <div key={label} className="bg-white/[0.03] border border-white/10 rounded-lg p-3.5 sm:p-4 flex flex-col gap-2.5 sm:gap-3">
                             <span className="font-mono text-[10px] text-white/50 font-bold">{label}</span>
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input type="checkbox" checked={released}
@@ -515,35 +515,35 @@ export default function App() {
                   )}
 
                   {/* Task Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
                     {tasks.map(({ key, title, subtitle, desc, released, linkKey, Icon }, idx) => {
                       return (
                       <motion.div
                         key={key}
                         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 + 0.2 }}
                         whileHover={{ y: -5, scale: 1.015 }}
-                        className={`relative rounded-xl p-7 flex flex-col gap-5 border overflow-hidden transition-all duration-300 ${released ? 'border-primary-red/30 bg-gradient-to-br from-primary-red/[0.05] to-transparent hover:border-primary-red/50' : 'border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:border-white/20'}`}
+                        className={`relative rounded-xl p-5 sm:p-7 flex flex-col gap-4 sm:gap-5 border overflow-hidden transition-all duration-300 ${released ? 'border-primary-red/30 bg-gradient-to-br from-primary-red/[0.05] to-transparent hover:border-primary-red/50' : 'border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:border-white/20'}`}
                       >
                         {/* Background number watermark */}
-                        <span className={`absolute -right-3 -bottom-4 font-display font-black text-[120px] ${released ? 'text-primary-red/[0.05]' : 'text-white/[0.03]'} leading-none select-none pointer-events-none`}>{key}</span>
+                        <span className={`absolute -right-3 -bottom-4 font-display font-black text-[80px] sm:text-[120px] ${released ? 'text-primary-red/[0.05]' : 'text-white/[0.03]'} leading-none select-none pointer-events-none`}>{key}</span>
 
                         <div className="flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-lg ${released ? 'bg-primary-red/[0.1] border-primary-red/20' : 'bg-white/[0.06] border-white/10'} border flex items-center justify-center`}>
-                            <Icon className={`h-5 w-5 ${released ? 'text-primary-red' : 'text-white/30'}`} />
+                          <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-lg ${released ? 'bg-primary-red/[0.1] border-primary-red/20' : 'bg-white/[0.06] border-white/10'} border flex items-center justify-center shrink-0`}>
+                            <Icon className={`h-4 sm:h-5 w-4 sm:w-5 ${released ? 'text-primary-red' : 'text-white/30'}`} />
                           </div>
                           <span className={`font-mono text-[10px] font-bold ${released ? 'text-primary-red/80' : 'text-white/30'} tracking-widest`}>{title.toUpperCase()}</span>
                         </div>
 
                         <div>
-                          <h3 className={`font-display font-bold text-3xl ${released ? 'text-white' : 'text-white/50'}`}>{title}</h3>
+                          <h3 className={`font-display font-bold text-2xl sm:text-3xl ${released ? 'text-white' : 'text-white/50'}`}>{title}</h3>
 
                           {released ? (
-                            <div className="mt-4 flex flex-col gap-3">
+                            <div className="mt-3 sm:mt-4 flex flex-col gap-2.5 sm:gap-3">
                               <h4 className="font-mono text-xs text-primary-red/80 uppercase tracking-wide">{subtitle}</h4>
-                              <p className="text-sm text-white/60 leading-relaxed">{desc}</p>
+                              <p className="text-xs sm:text-sm text-white/60 leading-relaxed">{desc}</p>
                               
                               {currentUser.role === "team" && (
-                                <div className="mt-4 border-t border-white/[0.06] pt-4">
+                                <div className="mt-3 sm:mt-4 border-t border-white/[0.06] pt-3 sm:pt-4">
                                   <label className="font-mono text-[9px] text-blue-400 uppercase tracking-widest mb-2 block">Drive Link Submission</label>
 
                                   {submittedLinks[linkKey] && !draftLinks[`${linkKey}_editing`] ? (
@@ -572,7 +572,7 @@ export default function App() {
                                         placeholder="https://drive.google.com/..."
                                         value={draftLinks[linkKey] ?? ""}
                                         onChange={(e) => setDraftLinks(prev => ({ ...prev, [linkKey]: e.target.value }))}
-                                        className="bg-[#070709] border border-white/15 text-xs text-white px-3 py-2.5 rounded-lg outline-none focus:border-blue-400/70 font-mono w-full transition-colors"
+                                        className="bg-[#070709] border border-white/15 text-xs text-white px-3 py-2 sm:py-2.5 rounded-lg outline-none focus:border-blue-400/70 font-mono w-full transition-colors"
                                       />
                                       <div className="flex gap-2">
                                         <button
@@ -639,18 +639,18 @@ export default function App() {
                         </div>
 
                         <div className="pt-4 border-t border-white/[0.06] mt-auto">
-                          <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="bg-white/[0.03] rounded-lg py-3">
-                              <p className="font-display font-black text-white/50 text-2xl">30</p>
-                              <p className="font-mono text-[10px] text-white/30 mt-0.5 tracking-widest uppercase">Circuit</p>
+                          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center">
+                            <div className="bg-white/[0.03] rounded-lg py-2.5 sm:py-3">
+                              <p className="font-display font-black text-white/50 text-xl sm:text-2xl">30</p>
+                              <p className="font-mono text-[8px] sm:text-[10px] text-white/30 mt-0.5 tracking-wider sm:tracking-widest uppercase">Circuit</p>
                             </div>
-                            <div className="bg-white/[0.03] rounded-lg py-3">
-                              <p className="font-display font-black text-white/50 text-2xl">30</p>
-                              <p className="font-mono text-[10px] text-white/30 mt-0.5 tracking-widest uppercase">Report</p>
+                            <div className="bg-white/[0.03] rounded-lg py-2.5 sm:py-3">
+                              <p className="font-display font-black text-white/50 text-xl sm:text-2xl">30</p>
+                              <p className="font-mono text-[8px] sm:text-[10px] text-white/30 mt-0.5 tracking-wider sm:tracking-widest uppercase">Report</p>
                             </div>
-                            <div className="bg-white/[0.03] rounded-lg py-3">
-                              <p className="font-display font-black text-white/50 text-2xl">40</p>
-                              <p className="font-mono text-[10px] text-white/30 mt-0.5 tracking-widest uppercase">Result</p>
+                            <div className="bg-white/[0.03] rounded-lg py-2.5 sm:py-3">
+                              <p className="font-display font-black text-white/50 text-xl sm:text-2xl">40</p>
+                              <p className="font-mono text-[8px] sm:text-[10px] text-white/30 mt-0.5 tracking-wider sm:tracking-widest uppercase">Result</p>
                             </div>
                           </div>
                         </div>
@@ -659,7 +659,7 @@ export default function App() {
                   </div>
 
                   {/* Scoring info */}
-                  <div className="mt-8 bg-white/[0.015] border border-white/[0.06] rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="mt-6 sm:mt-8 bg-white/[0.015] border border-white/[0.06] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                     <Trophy className="h-5 w-5 text-yellow-400 shrink-0" />
                     <div>
                       <p className="font-mono text-xs text-white font-semibold">CUMULATIVE SCORING</p>

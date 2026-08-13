@@ -49,26 +49,26 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-12 px-4 md:px-8 mt-14">
+    <div className="w-full max-w-6xl mx-auto py-8 sm:py-12 px-3 sm:px-6 md:px-8 mt-14">
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-10 border-b border-white/[0.06] pb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 sm:gap-4 mb-8 sm:mb-10 border-b border-white/[0.06] pb-4 sm:pb-6">
         <div>
           <span className="font-mono text-[10px] text-primary-red uppercase tracking-widest block mb-1">Rankings</span>
-          <h1 className="font-display font-black text-4xl md:text-5xl text-white tracking-tight">Live Leaderboard</h1>
-          <p className="font-mono text-xs text-white/35 mt-1">Max 300 pts · 3 tasks × 100 pts each</p>
+          <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight">Live Leaderboard</h1>
+          <p className="font-mono text-[11px] sm:text-xs text-white/35 mt-1">Max 300 pts · 3 tasks × 100 pts each</p>
         </div>
         {isAdmin && (
           <button onClick={() => setIsRegisterOpen(true)}
-            className="btn-primary-gradient text-white font-mono text-xs font-bold px-5 py-2.5 rounded-lg flex items-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-primary-red/15 cursor-pointer">
+            className="w-full sm:w-auto justify-center btn-primary-gradient text-white font-mono text-xs font-bold px-5 py-2.5 rounded-lg flex items-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-primary-red/15 cursor-pointer">
             <Plus className="h-4 w-4" /> REGISTER TEAM
           </button>
         )}
       </div>
 
       {/* Search */}
-      <div className="mb-8">
-        <div className="relative max-w-xs">
+      <div className="mb-6 sm:mb-8">
+        <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
           <input type="text" placeholder="Search teams…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
             className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-primary-red/50 text-xs text-white pl-9 pr-4 py-2 outline-none rounded-lg transition-all" />
@@ -77,32 +77,36 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
 
       {/* Podium — top 3 grand display */}
       {top3.length > 0 && (
-        <div className="flex flex-col items-center mb-14">
-          <p className="font-mono text-[9px] text-white/25 tracking-widest uppercase mb-8">Top Performers</p>
-          <div className="flex items-end justify-center gap-4 w-full max-w-2xl">
+        <div className="flex flex-col items-center mb-10 sm:mb-14">
+          <p className="font-mono text-[9px] text-white/25 tracking-widest uppercase mb-6 sm:mb-8">Top Performers</p>
+          <div className="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-2xl">
             {podiumOrder.map((team) => {
               const cfg = podiumConfig[team.rank];
               if (!cfg) return null;
+              
+              // Mobile-adjusted height mapping
+              const mobileHeight = team.rank === 1 ? "h-44 sm:h-52" : team.rank === 2 ? "h-36 sm:h-44" : "h-32 sm:h-40";
+
               return (
                 <motion.div key={team.id}
                   initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: team.rank === 1 ? 0 : team.rank === 2 ? 0.1 : 0.2 }}
                   whileHover={{ y: -6, scale: 1.025 }}
                   onClick={() => onSelectTeam(team)}
-                  className={`relative flex-1 glass-panel rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border ${cfg.height} ${cfg.border} shadow-xl ${cfg.glow} bg-gradient-to-b from-white/[0.025] to-transparent transition-all duration-300`}>
+                  className={`relative flex-1 glass-panel rounded-xl p-3 sm:p-6 flex flex-col justify-between text-center cursor-pointer border ${mobileHeight} ${cfg.border} shadow-xl ${cfg.glow} bg-gradient-to-b from-white/[0.025] to-transparent transition-all duration-300`}>
 
                   {/* Rank badge */}
-                  <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 ${cfg.badge} text-[9px] font-black px-3 py-0.5 rounded-full flex items-center gap-1 shadow-lg whitespace-nowrap`}>
-                    <Trophy className="h-2.5 w-2.5" /> {cfg.label} PLACE
+                  <div className={`absolute -top-3 left-1/2 -translate-x-1/2 ${cfg.badge} text-[7px] sm:text-[9px] font-black px-2 sm:px-3 py-0.5 rounded-full flex items-center gap-1 shadow-lg whitespace-nowrap`}>
+                    <Trophy className="h-2 sm:h-2.5 w-2 sm:w-2.5" /> {cfg.label} PLACE
                   </div>
 
-                  <div className="pt-3 flex flex-col gap-1">
-                    <h3 className="font-display font-black text-lg text-white leading-tight">{team.name}</h3>
-                    <p className="font-mono text-[9px] text-white/35">{team.tags.length > 0 ? `${team.tags.length} member${team.tags.length !== 1 ? 's' : ''}` : "—"}</p>
+                  <div className="pt-2 sm:pt-3 flex flex-col gap-0.5 sm:gap-1">
+                    <h3 className="font-display font-black text-xs sm:text-base md:text-lg text-white leading-tight line-clamp-2">{team.name}</h3>
+                    <p className="font-mono text-[8px] sm:text-[9px] text-white/35">{team.tags.length > 0 ? `${team.tags.length} member${team.tags.length !== 1 ? 's' : ''}` : "—"}</p>
                   </div>
 
                   <div className="flex flex-col items-center">
-                    <span className={`font-display font-black text-5xl leading-none ${cfg.textColor}`}>{team.totalPoints}</span>
+                    <span className={`font-display font-black text-2xl sm:text-4xl md:text-5xl leading-none ${cfg.textColor}`}>{team.totalPoints}</span>
                   </div>
                 </motion.div>
               );
@@ -120,36 +124,36 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
 
       {/* All teams summary below podium */}
       {sorted.length > 0 && (
-        <div className="glass-panel rounded-xl overflow-hidden border border-white/[0.06] shadow-xl mb-8">
+        <div className="glass-panel rounded-xl overflow-hidden border border-white/[0.06] shadow-xl mb-6 sm:mb-8">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[320px]">
               <thead>
                 <tr className="border-b border-white/[0.06] font-mono text-[9px] text-white/30 tracking-widest uppercase">
-                  <th className="py-3.5 px-5 text-center w-16">POS</th>
-                  <th className="py-3.5 px-5">TEAM</th>
-                  <th className="py-3.5 px-5 text-right w-48">TOTAL PTS</th>
-                  {isAdmin && <th className="py-3.5 px-5 w-12" />}
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-5 text-center w-12 sm:w-16">POS</th>
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-5">TEAM</th>
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-5 text-right w-32 sm:w-48">TOTAL PTS</th>
+                  {isAdmin && <th className="py-3 sm:py-3.5 px-3 sm:px-5 w-10 sm:w-12" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
                 {sorted.map(team => (
                   <tr key={team.id} onClick={() => onSelectTeam(team)} className="group hover:bg-white/[0.02] cursor-pointer transition-colors">
-                    <td className="py-4 px-5 text-center">
-                      <div className="mx-auto w-7 h-7 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center font-mono text-[11px] text-white/50">{team.rank}</div>
+                    <td className="py-3 sm:py-4 px-3 sm:px-5 text-center">
+                      <div className="mx-auto w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center font-mono text-[10px] sm:text-[11px] text-white/50">{team.rank}</div>
                     </td>
-                    <td className="py-4 px-5">
-                      <div className="font-display font-bold text-sm text-white group-hover:text-primary-red transition-colors">{team.name}</div>
+                    <td className="py-3 sm:py-4 px-3 sm:px-5">
+                      <div className="font-display font-bold text-xs sm:text-sm text-white group-hover:text-primary-red transition-colors">{team.name}</div>
                       {team.tags.length > 0 && (
-                        <div className="font-mono text-[9px] text-white/30 mt-0.5">{team.tags.join(" · ")}</div>
+                        <div className="font-mono text-[8px] sm:text-[9px] text-white/30 mt-0.5 line-clamp-1">{team.tags.join(" · ")}</div>
                       )}
                     </td>
-                    <td className="py-4 px-5 text-right">
+                    <td className="py-3 sm:py-4 px-3 sm:px-5 text-right">
                       <div className="inline-flex flex-col items-end gap-0.5">
-                        <span className="font-display font-black text-4xl text-primary-red leading-none">{team.totalPoints}</span>
+                        <span className="font-display font-black text-2xl sm:text-4xl text-primary-red leading-none">{team.totalPoints}</span>
                       </div>
                     </td>
                     {isAdmin && (
-                      <td className="py-4 px-3" onClick={e => e.stopPropagation()}>
+                      <td className="py-3 sm:py-4 px-2 sm:px-3" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => {
                             if (window.confirm(`Delete team "${team.name}"? This cannot be undone.`)) {
@@ -172,42 +176,42 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
       )}
 
       {/* Scoring breakdown note */}
-      <div className="bg-white/[0.015] border border-white/[0.06] p-4 rounded-xl font-mono text-[10px] text-white/35 leading-relaxed">
+      <div className="bg-white/[0.015] border border-white/[0.06] p-3.5 sm:p-4 rounded-xl font-mono text-[9px] sm:text-[10px] text-white/35 leading-relaxed">
         Scores are cumulative across all 3 tasks. Each task carries: Circuit Design (30) · Report Submission (30) · Result (40) = 100 pts per task.
       </div>
 
       {/* Register Team Modal */}
       <AnimatePresence>
         {isRegisterOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsRegisterOpen(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
             <motion.div initial={{ scale: 0.96, opacity: 0, y: 16 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0, y: 16 }}
-              className="relative w-full max-w-md bg-[#0D0D10] border border-white/10 rounded-2xl p-7 z-10 shadow-2xl">
+              className="relative w-full max-w-md bg-[#0D0D10] border border-white/10 rounded-2xl p-5 sm:p-7 z-10 shadow-2xl">
               <button onClick={() => setIsRegisterOpen(false)} className="absolute top-4 right-4 text-white/30 hover:text-white cursor-pointer"><X className="h-4 w-4" /></button>
 
-              <div className="mb-6">
+              <div className="mb-5 sm:mb-6">
                 <span className="font-mono text-[9px] text-primary-red tracking-widest uppercase">Admin · Registry</span>
-                <h2 className="font-display font-black text-2xl text-white mt-1">Register New Team</h2>
+                <h2 className="font-display font-black text-xl sm:text-2xl text-white mt-0.5">Register New Team</h2>
               </div>
 
-              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Team Name</label>
+                  <label className="font-mono text-[9px] sm:text-[10px] text-white/40 uppercase tracking-widest">Team Name</label>
                   <input type="text" required placeholder="e.g. APEX DYNAMICS" value={formName} onChange={e => setFormName(e.target.value)}
-                    className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-sm text-white outline-none font-mono uppercase" />
+                    className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-white outline-none font-mono uppercase" />
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <div className="flex flex-col gap-1.5 flex-1">
-                    <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Department</label>
+                    <label className="font-mono text-[9px] sm:text-[10px] text-white/40 uppercase tracking-widest">Department</label>
                     <input type="text" required placeholder="e.g. EEE" value={formDept} onChange={e => setFormDept(e.target.value)}
-                      className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-sm text-white outline-none font-mono uppercase" />
+                      className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-white outline-none font-mono uppercase" />
                   </div>
-                  <div className="flex flex-col gap-1.5 w-1/3">
-                    <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Year</label>
+                  <div className="flex flex-col gap-1.5 sm:w-1/3">
+                    <label className="font-mono text-[9px] sm:text-[10px] text-white/40 uppercase tracking-widest">Year</label>
                     <input type="text" required placeholder="e.g. 3rd" value={formYear} onChange={e => setFormYear(e.target.value)}
-                      className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-sm text-white outline-none font-mono uppercase" />
+                      className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-white outline-none font-mono uppercase" />
                   </div>
                 </div>
 

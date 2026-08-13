@@ -182,7 +182,30 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
 
 
 
-              {/* Live total preview */}
+              {/* Submitted Links Panel - instantly visible to Admin */}
+              <div className="bg-blue-500/[0.04] border border-blue-500/20 rounded-lg p-4 mb-5">
+                <h3 className="font-mono text-[10px] text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" /> Team Submissions
+                </h3>
+                <div className="space-y-3">
+                  {[1, 2, 3].map(num => {
+                    const link = team.metrics && team.metrics[`task${num}Link` as keyof Team["metrics"]] as string;
+                    return (
+                      <div key={num} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-white/[0.02] p-2.5 rounded border border-white/[0.05]">
+                        <span className="font-mono text-[9px] text-white/40 shrink-0 w-12">Task {num}</span>
+                        {link ? (
+                          <a href={link} target="_blank" rel="noopener noreferrer" 
+                            className="text-white text-xs hover:text-blue-300 transition-colors break-all underline decoration-white/20 underline-offset-4 truncate">
+                            {link}
+                          </a>
+                        ) : (
+                          <span className="text-white/20 text-xs italic">Not submitted</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 flex justify-between items-center mb-5">
                 <span className="font-mono text-[10px] text-white/40">Preview Total</span>
                 <span className="font-display font-black text-2xl text-white">{liveTotal}<span className="text-white/20 text-xs font-mono"> / 300</span></span>
@@ -213,16 +236,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                         {isOpen && (
                           <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
                             <div className="p-4 pt-0 border-t border-white/[0.06]">
-                              {/* Per-Task Drive Link */}
-                              {team.metrics && team.metrics[`task${key.replace('t', '')}Link` as keyof Team["metrics"]] && (
-                                <div className="mb-4 mt-4 bg-blue-500/[0.04] border border-blue-500/20 rounded-lg p-3">
-                                  <p className="font-mono text-[10px] text-blue-400 uppercase tracking-widest mb-1">Submitted Drive Link</p>
-                                  <a href={team.metrics[`task${key.replace('t', '')}Link` as keyof Team["metrics"]] as string} target="_blank" rel="noopener noreferrer" 
-                                    className="text-white text-sm hover:text-blue-300 transition-colors break-all underline decoration-white/20 underline-offset-4">
-                                    {team.metrics[`task${key.replace('t', '')}Link` as keyof Team["metrics"]] as string}
-                                  </a>
-                                </div>
-                              )}
+                              {/* Per-Task Drive Link removed from here and moved to top panel */}
                               
                               <div className="grid grid-cols-3 gap-4">
                                 {[

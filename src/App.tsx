@@ -365,10 +365,15 @@ export default function App() {
         <AnimatePresence mode="wait">
 
           {selectedTeam ? (
-            <motion.div key="detail" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.28 }}>
-              <TeamTelemetryDetails team={selectedTeam} onBack={() => setSelectedTeam(null)} onUpdateMetrics={handleUpdateMetrics} isAdmin={currentUser.role === "admin"} />
-            </motion.div>
-
+            (() => {
+              // Always use the live team from teams array so submitted links & scores stay fresh
+              const liveTeam = teams.find(t => t.id === selectedTeam.id) ?? selectedTeam;
+              return (
+                <motion.div key="detail" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.28 }}>
+                  <TeamTelemetryDetails team={liveTeam} onBack={() => setSelectedTeam(null)} onUpdateMetrics={handleUpdateMetrics} isAdmin={currentUser.role === "admin"} />
+                </motion.div>
+              );
+            })()
           ) : currentTab === "home" ? (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}>
 

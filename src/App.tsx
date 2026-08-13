@@ -52,6 +52,23 @@ export default function App() {
   // Canvas ref for particle background
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Draft state for team link inputs (avoids read-only binding to teams state)
+  const [draftLinks, setDraftLinks] = useState<Record<string, string>>({});
+
+  // When team logs in, initialize draftLinks from their existing metrics
+  useEffect(() => {
+    if (currentUser.role === "team" && currentUser.teamId) {
+      const t = teams.find(t => t.id === currentUser.teamId);
+      if (t) {
+        setDraftLinks({
+          task1Link: (t.metrics?.task1Link as string) || "",
+          task2Link: (t.metrics?.task2Link as string) || "",
+          task3Link: (t.metrics?.task3Link as string) || "",
+        });
+      }
+    }
+  }, [currentUser.teamId, currentUser.role, teams]);
+
   useEffect(() => {
     try {
       const savedUser = localStorage.getItem("simverse_user");
@@ -487,7 +504,7 @@ export default function App() {
                   {/* Task Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {tasks.map(({ key, title, subtitle, desc, released, linkKey, Icon }, idx) => {
-                      const teamLink = currentUser.role === "team" ? (teams.find(t => t.id === currentUser.teamId)?.metrics?.[linkKey as keyof Team["metrics"]] as string || "") : "";
+                      const draftLinkValue = draftLinks[linkKey] ?? "";
                       return (
                       <motion.div
                         key={key}
@@ -516,23 +533,27 @@ export default function App() {
                               {currentUser.role === "team" && (
                                 <div className="mt-3">
                                   <label className="font-mono text-[9px] text-blue-400 uppercase tracking-widest mb-1.5 block">Submit Drive Link</label>
-                                  <input type="text" placeholder="https://drive.google.com/..." 
-                                    value={teamLink}
-                                    onChange={async (e) => {
-                                      const val = e.target.value;
+                                  <input
+                                    type="text"
+                                    placeholder="https://drive.google.com/..."
+                                    value={draftLinkValue}
+                                    onChange={(e) => {
+                                      setDraftLinks(prev => ({ ...prev, [linkKey]: e.target.value }));
+                                    }}
+                                    onBlur={async () => {
                                       try {
                                         if (currentUser.teamId) {
                                           const t = teams.find(t => t.id === currentUser.teamId);
                                           if (t) {
-                                            const updatedMetrics = { ...t.metrics, [linkKey]: val };
+                                            const updatedMetrics = { ...t.metrics, [linkKey]: draftLinkValue };
                                             await teamService.updateTeamScores(t.id, updatedMetrics);
                                           }
                                         }
                                       } catch (err) {
-                                        console.error("Failed to update submission", err);
+                                        console.error("Failed to save submission", err);
                                       }
                                     }}
-                                    className="bg-[#070709] border border-white/10 text-xs text-white px-3 py-2 rounded outline-none focus:border-blue-400/60 font-mono w-full" />
+                                    className="bg-[#070709] border border-white/10 text-xs text-white px-3 py-2.5 rounded outline-none focus:border-blue-400/60 font-mono w-full transition-colors" />
                                 </div>
                               )}
                             </div>
@@ -562,19 +583,19 @@ export default function App() {
                           )}
                         </div>
 
-                        <div className="pt-3 border-t border-white/[0.06] mt-auto">
+                        <div className="pt-4 border-t border-white/[0.06] mt-auto">
                           <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="bg-white/[0.02] rounded-lg py-2">
-                              <p className="font-display font-black text-white/30 text-sm">30</p>
-                              <p className="font-mono text-[8px] text-white/20 mt-0.5">Circuit</p>
+                            <div className="bg-white/[0.03] rounded-lg py-3">
+                              <p className="font-display font-black text-white/50 text-2xl">30</p>
+                              <p className="font-mono text-[10px] text-white/30 mt-0.5 tracking-widest uppercase">Circuit</p>
                             </div>
-                            <div className="bg-white/[0.02] rounded-lg py-2">
-                              <p className="font-display font-black text-white/30 text-sm">30</p>
-                              <p className="font-mono text-[8px] text-white/20 mt-0.5">Report</p>
+                            <div className="bg-white/[0.03] rounded-lg py-3">
+                              <p className="font-display font-black text-white/50 text-2xl">30</p>
+                              <p className="font-mono text-[10px] text-white/30 mt-0.5 tracking-widest uppercase">Report</p>
                             </div>
-                            <div className="bg-white/[0.02] rounded-lg py-2">
-                              <p className="font-display font-black text-white/30 text-sm">40</p>
-                              <p className="font-mono text-[8px] text-white/20 mt-0.5">Result</p>
+                            <div className="bg-white/[0.03] rounded-lg py-3">
+                              <p className="font-display font-black text-white/50 text-2xl">40</p>
+                              <p className="font-mono text-[10px] text-white/30 mt-0.5 tracking-widest uppercase">Result</p>
                             </div>
                           </div>
                         </div>

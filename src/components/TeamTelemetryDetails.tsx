@@ -25,7 +25,7 @@ const TASK_MAP: { label: string; key: string; fields: TaskFields }[] = [
 export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, isAdmin = false }: TeamTelemetryDetailsProps) {
   const [draftMetrics, setDraftMetrics] = useState<Team["metrics"]>({ ...team.metrics });
   const [isSaved, setIsSaved] = useState(false);
-  const [expanded, setExpanded] = useState<string>("t1");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(["t1", "t2", "t3"]));
   const [expandedSummaryTask, setExpandedSummaryTask] = useState<string>("");
 
   useEffect(() => { setDraftMetrics({ ...team.metrics }); }, [team]);
@@ -190,11 +190,15 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
 
               <div className="space-y-3">
                 {TASK_MAP.map(({ label, key }) => {
-                  const isOpen = expanded === key;
+                  const isOpen = expanded.has(key);
                   const taskPts = calcTaskTotal(draftMetrics, key);
                   return (
                     <div key={key} className="border border-white/[0.06] rounded-xl overflow-hidden">
-                      <button type="button" onClick={() => setExpanded(isOpen ? "" : key)}
+                      <button type="button" onClick={() => setExpanded(prev => {
+                          const next = new Set(prev);
+                          next.has(key) ? next.delete(key) : next.add(key);
+                          return next;
+                        })}
                         className="w-full flex items-center justify-between p-4 text-left hover:bg-white/[0.02] transition-colors cursor-pointer">
                         <div>
                           <p className="font-mono text-[10px] text-white/50">{label}</p>

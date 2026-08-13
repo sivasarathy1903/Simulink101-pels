@@ -30,9 +30,17 @@ export function useTeams() {
         "postgres_changes",
         { event: "*", schema: "public", table: "teams" },
         (payload) => {
-          console.log("Realtime event received:", payload);
-          // Refetch everything to ensure proper sorting and mapping.
-          // Alternatively, we could update state locally, but refetching ensures consistency for rank calculation.
+          console.log("Realtime event received (teams):", payload);
+          fetchTeams();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "submissions" },
+        (payload) => {
+          console.log("Realtime event received (submissions):", payload);
+          // If a submission changes, just trigger a re-render/refetch of teams 
+          // which will pass down new props and trigger the useEffect in TeamTelemetryDetails
           fetchTeams();
         }
       )

@@ -27,8 +27,16 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
   const [isSaved, setIsSaved] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["t1", "t2", "t3"]));
   const [expandedSummaryTask, setExpandedSummaryTask] = useState<string>("");
+  const [submissions, setSubmissions] = useState<Record<string, string>>({});
 
-  useEffect(() => { setDraftMetrics({ ...team.metrics }); }, [team]);
+  useEffect(() => { 
+    setDraftMetrics({ ...team.metrics });
+    
+    // Fetch submissions from the new table
+    import("../services/teamService").then(({ teamService }) => {
+      teamService.getTeamSubmissions(team.id).then(setSubmissions);
+    });
+  }, [team]);
 
   const calcTotal = (m: Team["metrics"]) =>
     (Number(m.t1_circuit) || 0) + (Number(m.t1_report) || 0) + (Number(m.t1_result) || 0) +
@@ -189,7 +197,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                 </h3>
                 <div className="space-y-3">
                   {[1, 2, 3].map(num => {
-                    const link = team.metrics && team.metrics[`task${num}Link` as keyof Team["metrics"]] as string;
+                    const link = submissions[`task${num}Link`];
                     return (
                       <div key={num} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-white/[0.02] p-2.5 rounded border border-white/[0.05]">
                         <span className="font-mono text-[9px] text-white/40 shrink-0 w-12">Task {num}</span>

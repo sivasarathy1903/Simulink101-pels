@@ -146,33 +146,36 @@ export const teamService = {
     return null;
   },
 
-  async updateTeamSubmission(id: string, driveLink: string): Promise<void> {
-    // First, fetch the current metrics
-    const { data, error: fetchError } = await supabase
-      .from("teams")
-      .select("metrics")
-      .eq("id", id)
-      .single();
+  async getTeamSubmissions(teamId: string): Promise<Record<string, string>> {
+    const { data, error } = await supabase
+      .from("submissions")
+      .select("task_key, drive_link")
+      .eq("team_id", teamId);
       
-    if (fetchError || !data) {
-      console.error("Error fetching team for submission:", fetchError);
-      throw fetchError || new Error("Team not found");
+    if (error) {
+      console.error("Error fetching submissions:", error);
+      return {};
     }
 
-    const currentMetrics = data.metrics || {};
-    const updatedMetrics = { ...currentMetrics, driveLink };
+    const submissionsMap: Record<string, string> = {};
+    data?.forEach(row => {
+      submissionsMap[row.task_key] = row.drive_link;
+    });
+    return submissionsMap;
+  },
 
-    const { error: updateError } = await supabase
-      .from("teams")
-      .update({
-        metrics: updatedMetrics,
-        last_updated: "Just now",
-      })
-      .eq("id", id);
+  async updateTeamSubmission(teamId: string, taskKey: string, driveLink: string): Promise<void> {
+    const { error } = await supabase
+      .from("submissions")
+      .upsert({
+        team_id: teamId,
+        task_key: taskKey,
+        drive_link: driveLink,
+      }, { onConflict: "team_id,task_key" });
 
-    if (updateError) {
-      console.error("Error updating team submission:", updateError);
-      throw updateError;
+    if (error) {
+      console.error("Error updating team submission:", error);
+      throw error;
     }
   }
 };

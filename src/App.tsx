@@ -59,24 +59,23 @@ export default function App() {
   // Which tasks are currently saving
   const [savingLink, setSavingLink] = useState<Record<string, boolean>>({});
 
-  // When team logs in, initialize draftLinks & submittedLinks from their existing metrics
+  // When team logs in, fetch their submissions from the new table
   useEffect(() => {
     if (currentUser.role === "team" && currentUser.teamId) {
-      const t = teams.find(t => t.id === currentUser.teamId);
-      if (t) {
+      teamService.getTeamSubmissions(currentUser.teamId).then(submissions => {
         const existing = {
-          task1Link: (t.metrics?.task1Link as string) || "",
-          task2Link: (t.metrics?.task2Link as string) || "",
-          task3Link: (t.metrics?.task3Link as string) || "",
+          task1Link: submissions["task1Link"] || "",
+          task2Link: submissions["task2Link"] || "",
+          task3Link: submissions["task3Link"] || "",
         };
         setDraftLinks(existing);
         // Mark already-submitted links as confirmed
         const confirmed: Record<string, string> = {};
         Object.entries(existing).forEach(([k, v]) => { if (v) confirmed[k] = v; });
         setSubmittedLinks(confirmed);
-      }
+      });
     }
-  }, [currentUser.teamId, currentUser.role, teams]);
+  }, [currentUser.teamId, currentUser.role]);
 
   useEffect(() => {
     try {
@@ -586,8 +585,7 @@ export default function App() {
                                             try {
                                               const t = teams.find(t => t.id === currentUser.teamId);
                                               if (t) {
-                                                const updatedMetrics = { ...t.metrics, [linkKey]: val };
-                                                await teamService.updateTeamScores(t.id, updatedMetrics);
+                                                await teamService.updateTeamSubmission(t.id, linkKey, val);
                                                 setSubmittedLinks(prev => ({ ...prev, [linkKey]: val }));
                                                 setDraftLinks(prev => { const n = { ...prev }; delete n[`${linkKey}_editing`]; return n; });
                                               }

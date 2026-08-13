@@ -234,12 +234,12 @@ export default function App() {
     setSelectedTeam(null);
   };
 
-  const handleRegisterTeam = async (newTeamData: { name: string; members: string[] }) => {
+  const handleRegisterTeam = async (newTeamData: { name: string; dept: string; year: string; members: string[] }) => {
     try {
       const generatedPassword = Math.random().toString(36).slice(-6).toUpperCase();
       await teamService.createTeam({
         name: newTeamData.name.toUpperCase(),
-        institution: "SIMVERSE 2026",
+        institution: `${newTeamData.dept} - ${newTeamData.year}`,
         totalPoints: 0,
         status: "Registered",
         metrics: { password: generatedPassword },
@@ -477,8 +477,8 @@ export default function App() {
 
                   <div className="flex flex-col md:flex-row items-end justify-between mb-12">
                     <div>
-                      <span className="font-mono text-xs text-primary-red block mb-2 tracking-widest font-semibold">CHALLENGE TRACK</span>
-                      <h2 className="font-display font-black text-4xl md:text-5xl text-white tracking-tight">Phase to Challenge</h2>
+                      <span className="font-mono text-[10px] text-primary-red tracking-widest uppercase mb-2 block">Event Flow</span>
+                      <h2 className="font-display font-black text-4xl md:text-5xl text-white tracking-tight">Phase 2 Challenge</h2>
                       <p className="font-mono text-xs text-white/40 mt-2">Tasks unlock sequentially — each phase builds on the last.</p>
                     </div>
                     <button onClick={() => setCurrentTab("leaderboard")} className="font-mono text-xs text-white/40 hover:text-primary-red flex items-center gap-2 mt-4 md:mt-0 cursor-pointer group transition-colors">

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 interface LeaderboardTableProps {
   teams: Team[];
   onSelectTeam: (team: Team) => void;
-  onRegisterTeam: (data: { name: string; members: string[] }) => void;
+  onRegisterTeam: (data: { name: string; dept: string; year: string; members: string[] }) => void;
   onDeleteTeam?: (id: string) => void;
   isAdmin?: boolean;
 }
@@ -15,6 +15,8 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
   const [searchTerm, setSearchTerm] = useState("");
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [formName, setFormName] = useState("");
+  const [formDept, setFormDept] = useState("");
+  const [formYear, setFormYear] = useState("");
   const [members, setMembers] = useState<string[]>([""]);
 
   const sorted = [...teams]
@@ -27,9 +29,9 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim()) return;
-    onRegisterTeam({ name: formName.trim(), members: members.filter(m => m.trim()) });
-    setFormName(""); setMembers([""]); setIsRegisterOpen(false);
+    if (!formName.trim() || !formDept.trim() || !formYear.trim()) return;
+    onRegisterTeam({ name: formName.trim(), dept: formDept.trim(), year: formYear.trim(), members: members.filter(m => m.trim()) });
+    setFormName(""); setFormDept(""); setFormYear(""); setMembers([""]); setIsRegisterOpen(false);
   };
 
   const top3 = sorted.slice(0, 3);
@@ -194,6 +196,19 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
                   <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Team Name</label>
                   <input type="text" required placeholder="e.g. APEX DYNAMICS" value={formName} onChange={e => setFormName(e.target.value)}
                     className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-sm text-white outline-none font-mono uppercase" />
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Department</label>
+                    <input type="text" required placeholder="e.g. EEE" value={formDept} onChange={e => setFormDept(e.target.value)}
+                      className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-sm text-white outline-none font-mono uppercase" />
+                  </div>
+                  <div className="flex flex-col gap-1.5 w-1/3">
+                    <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Year</label>
+                    <input type="text" required placeholder="e.g. 3rd" value={formYear} onChange={e => setFormYear(e.target.value)}
+                      className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-sm text-white outline-none font-mono uppercase" />
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-2">

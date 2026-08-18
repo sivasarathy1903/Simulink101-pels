@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, ShieldCheck, Trophy, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Trophy, Check, ChevronDown, ChevronUp, FileText, CheckCircle2 } from "lucide-react";
 import { Team } from "../types";
 import { motion, AnimatePresence } from "motion/react";
+import { EVALUATION_CRITERIA } from "./TaskDetailPage";
+import { calcTaskTotal, calcTotalPoints } from "../services/teamService";
+
+const TASK_MAP = [
+  { label: "Task 1 — Soft Robotic Rehabilitation Glove", key: "t1" },
+  { label: "Task 2 — Drone Camera Gimbal Power Stage", key: "t2" },
+  { label: "Task 3 — Electric Two-Wheeler Module", key: "t3" },
+];
 
 interface TeamTelemetryDetailsProps {
   team: Team;
@@ -10,43 +18,19 @@ interface TeamTelemetryDetailsProps {
   isAdmin?: boolean;
 }
 
-interface TaskFields {
-  circuit: keyof Team["metrics"];
-  report: keyof Team["metrics"];
-  result: keyof Team["metrics"];
-}
-
-const TASK_MAP: { label: string; key: string; fields: TaskFields }[] = [
-  { label: "Task 1 — Circuit Design Phase",   key: "t1", fields: { circuit: "t1_circuit", report: "t1_report", result: "t1_result" } },
-  { label: "Task 2 — Simulation Accuracy Phase", key: "t2", fields: { circuit: "t2_circuit", report: "t2_report", result: "t2_result" } },
-  { label: "Task 3 — Results & Report Phase", key: "t3", fields: { circuit: "t3_circuit", report: "t3_report", result: "t3_result" } },
-];
-
 export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, isAdmin = false }: TeamTelemetryDetailsProps) {
   const [draftMetrics, setDraftMetrics] = useState<Team["metrics"]>({ ...team.metrics });
   const [isSaved, setIsSaved] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["t1", "t2", "t3"]));
-  const [expandedSummaryTask, setExpandedSummaryTask] = useState<string>("");
+  const [expandedSummaryTask, setExpandedSummaryTask] = useState<string>("t1");
   const [submissions, setSubmissions] = useState<Record<string, string>>({});
 
   useEffect(() => { 
     setDraftMetrics({ ...team.metrics });
-    
-    // Fetch submissions from the new table
     import("../services/teamService").then(({ teamService }) => {
       teamService.getTeamSubmissions(team.id).then(setSubmissions);
     });
   }, [team]);
-
-  const calcTotal = (m: Team["metrics"]) =>
-    (Number(m.t1_circuit) || 0) + (Number(m.t1_report) || 0) + (Number(m.t1_result) || 0) +
-    (Number(m.t2_circuit) || 0) + (Number(m.t2_report) || 0) + (Number(m.t2_result) || 0) +
-    (Number(m.t3_circuit) || 0) + (Number(m.t3_report) || 0) + (Number(m.t3_result) || 0);
-
-  const calcTaskTotal = (m: Team["metrics"], key: string) =>
-    (Number(m[`${key}_circuit` as keyof Team["metrics"]]) || 0) +
-    (Number(m[`${key}_report` as keyof Team["metrics"]]) || 0) +
-    (Number(m[`${key}_result` as keyof Team["metrics"]]) || 0);
 
   const handleField = (field: keyof Team["metrics"], max: number, val: string) => {
     const num = Math.min(max, Math.max(0, Number(val)));
@@ -60,11 +44,11 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
     setTimeout(() => setIsSaved(false), 2000);
   };
 
-  const liveTotal = calcTotal(draftMetrics);
-  const savedTotal = calcTotal(team.metrics);
+  const liveTotal = calcTotalPoints(draftMetrics);
+  const savedTotal = calcTotalPoints(team.metrics);
 
   return (
-    <div className="w-full max-w-5xl mx-auto py-8 sm:py-12 px-3 sm:px-6 md:px-8 mt-14 font-sans">
+    <div className="w-full max-w-5xl mx-auto py-8 sm:py-12 px-3 sm:px-6 md:px-8 mt-14 font-sans text-white">
 
       {/* Back */}
       <button onClick={onBack}
@@ -78,8 +62,16 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
           <span className="font-mono text-[10px] text-primary-red uppercase tracking-widest block mb-1">Team Profile</span>
           <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight">{team.name}</h1>
 
-          {/* Members */}
-          {team.tags && team.tags.length > 0 && (
+          {/* Members list with Dept and Year */}
+          {team.members && team.members.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2.5 sm:mt-3">
+              {team.members.map((m, i) => (
+                <span key={i} className="font-mono text-[9px] sm:text-[10px] bg-white/[0.04] border border-white/[0.08] text-white/80 px-3 py-1 rounded-full">
+                  👤 {m.name} {m.dept ? <span className="text-primary-red font-semibold">({m.dept} {m.year ? `· ${m.year}` : ''})</span> : ''}
+                </span>
+              ))}
+            </div>
+          ) : team.tags && team.tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2.5 sm:mt-3">
               {team.tags.map((m, i) => (
                 <span key={i} className="font-mono text-[9px] sm:text-[10px] bg-white/[0.04] border border-white/[0.08] text-white/60 px-2.5 py-1 rounded-full">
@@ -87,7 +79,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                 </span>
               ))}
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Score pill */}
@@ -110,7 +102,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
 
-        {/* Left: Read-only breakdown */}
+        {/* Left: Score Summary Cards */}
         <div className="lg:col-span-2 flex flex-col gap-4">
           <div className="glass-panel rounded-xl p-4 sm:p-6 border border-white/[0.06]">
             <div className="flex items-center gap-3 mb-6 sm:mb-8">
@@ -120,7 +112,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
 
             <div className="space-y-5 sm:space-y-6">
               {TASK_MAP.map(({ label, key }) => {
-                const taskPts = calcTaskTotal(team.metrics, key);
+                const taskPts = calcTaskTotal(team.metrics, key as any);
                 const pct = (taskPts / 100) * 100;
                 const isExpanded = expandedSummaryTask === key;
                 return (
@@ -134,33 +126,24 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                         initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, ease: "easeOut" }} />
                     </div>
                     <AnimatePresence>
-                      {isExpanded ? (
+                      {isExpanded && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden mt-3"
                         >
-                          <div className="bg-white/[0.02] border border-white/[0.04] rounded-lg p-3 sm:p-4 grid grid-cols-3 gap-1.5 sm:gap-2">
-                            <div className="text-center">
-                              <p className="font-mono text-[9px] sm:text-xs text-white/50 uppercase mb-1 tracking-wider sm:tracking-widest">Circuit</p>
-                              <p className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-white">{Number(team.metrics[`${key}_circuit` as keyof Team["metrics"]]) || 0}<span className="text-xs sm:text-sm font-normal text-white/30 ml-0.5 sm:ml-1">/ 30</span></p>
-                            </div>
-                            <div className="text-center">
-                              <p className="font-mono text-[9px] sm:text-xs text-white/50 uppercase mb-1 tracking-wider sm:tracking-widest">Report</p>
-                              <p className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-white">{Number(team.metrics[`${key}_report` as keyof Team["metrics"]]) || 0}<span className="text-xs sm:text-sm font-normal text-white/30 ml-0.5 sm:ml-1">/ 30</span></p>
-                            </div>
-                            <div className="text-center">
-                              <p className="font-mono text-[9px] sm:text-xs text-white/50 uppercase mb-1 tracking-wider sm:tracking-widest">Result</p>
-                              <p className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-white">{Number(team.metrics[`${key}_result` as keyof Team["metrics"]]) || 0}<span className="text-xs sm:text-sm font-normal text-white/30 ml-0.5 sm:ml-1">/ 40</span></p>
-                            </div>
+                          <div className="bg-white/[0.02] border border-white/[0.04] rounded-lg p-3 space-y-1.5 font-mono text-xs">
+                            {EVALUATION_CRITERIA.map(crit => {
+                              const pts = Number(team.metrics[`${key}_${crit.key}` as keyof Team["metrics"]]) || 0;
+                              return (
+                                <div key={crit.key} className="flex justify-between items-center text-[11px]">
+                                  <span className="text-white/50">{crit.label}</span>
+                                  <span className="font-bold text-white"><span className="text-primary-red">{pts}</span>/{crit.max}</span>
+                                </div>
+                              );
+                            })}
                           </div>
-                        </motion.div>
-                      ) : (
-                        <motion.div className="flex justify-between font-mono text-[9px] sm:text-[10px] text-white/25 mt-1.5" initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                          <span>Circuit {Number(team.metrics[`${key}_circuit` as keyof Team["metrics"]]) || 0}/30</span>
-                          <span>Report {Number(team.metrics[`${key}_report` as keyof Team["metrics"]]) || 0}/30</span>
-                          <span>Result {Number(team.metrics[`${key}_result` as keyof Team["metrics"]]) || 0}/40</span>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -176,7 +159,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
           </div>
         </div>
 
-        {/* Right: Admin marks entry */}
+        {/* Right: Detailed Evaluation Breakdown for Viewers OR Mark Entry for Admin */}
         <div className="lg:col-span-3">
           {isAdmin ? (
             <form onSubmit={handleSave} className="glass-panel rounded-xl p-4 sm:p-5 border border-primary-red/15 bg-gradient-to-b from-primary-red/[0.02] to-transparent">
@@ -188,7 +171,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                 )}
               </div>
 
-              {/* Submitted Links Panel - instantly visible to Admin */}
+              {/* Submitted Links Panel */}
               <div className="bg-blue-500/[0.04] border border-blue-500/20 rounded-lg p-3 sm:p-4 mb-4 sm:mb-5">
                 <h3 className="font-mono text-[10px] text-blue-400 uppercase tracking-widest mb-2.5 sm:mb-3 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-400" /> Team Submissions
@@ -212,15 +195,16 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                   })}
                 </div>
               </div>
+
               <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 flex justify-between items-center mb-4 sm:mb-5">
                 <span className="font-mono text-[10px] text-white/40">Preview Total</span>
                 <span className="font-display font-black text-xl sm:text-2xl text-white">{liveTotal}<span className="text-white/20 text-xs font-mono"> / 300</span></span>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {TASK_MAP.map(({ label, key }) => {
                   const isOpen = expanded.has(key);
-                  const taskPts = calcTaskTotal(draftMetrics, key);
+                  const taskPts = calcTaskTotal(draftMetrics, key as any);
                   return (
                     <div key={key} className="border border-white/[0.06] rounded-xl overflow-hidden">
                       <button type="button" onClick={() => setExpanded(prev => {
@@ -242,20 +226,22 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                         {isOpen && (
                           <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
                             <div className="p-3.5 sm:p-4 pt-0 border-t border-white/[0.06]">
-                              <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-3">
-                                {[
-                                  { label: "Circuit", field: `${key}_circuit` as keyof Team["metrics"], max: 30 },
-                                  { label: "Report", field: `${key}_report` as keyof Team["metrics"], max: 30 },
-                                  { label: "Result", field: `${key}_result` as keyof Team["metrics"], max: 40 },
-                                ].map(({ label: fl, field, max }) => (
-                                  <div key={field as string} className="flex flex-col gap-1 sm:gap-1.5">
-                                    <label className="font-mono text-[9px] sm:text-xs font-bold text-white/60 uppercase tracking-wider sm:tracking-widest">{fl}<span className="text-primary-red/70 ml-0.5 sm:ml-1">/{max}</span></label>
-                                    <input type="number" min={0} max={max}
-                                      value={Number(draftMetrics[field]) || 0}
-                                      onChange={e => handleField(field, max, e.target.value)}
-                                      className="bg-[#070709] border border-white/20 focus:border-primary-red/80 rounded-lg px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-lg font-bold text-white font-mono outline-none w-full shadow-inner" />
-                                  </div>
-                                ))}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                                {EVALUATION_CRITERIA.map(crit => {
+                                  const field = `${key}_${crit.key}` as keyof Team["metrics"];
+                                  return (
+                                    <div key={crit.key} className="flex flex-col gap-1 bg-white/[0.02] p-2.5 rounded-lg border border-white/[0.05]">
+                                      <label className="font-mono text-[10px] font-bold text-white/70 uppercase flex justify-between">
+                                        <span>{crit.label}</span>
+                                        <span className="text-primary-red">/{crit.max}</span>
+                                      </label>
+                                      <input type="number" min={0} max={crit.max}
+                                        value={Number(draftMetrics[field]) || 0}
+                                        onChange={e => handleField(field, crit.max, e.target.value)}
+                                        className="bg-[#070709] border border-white/20 focus:border-primary-red/80 rounded-lg px-3 py-1.5 text-sm font-bold text-white font-mono outline-none w-full" />
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           </motion.div>
@@ -267,18 +253,52 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
               </div>
 
               <button type="submit"
-                className="w-full btn-primary-gradient font-mono text-xs font-bold text-white py-3 sm:py-3.5 rounded-xl hover:scale-[1.01] transition-transform flex items-center justify-center gap-2 cursor-pointer mt-4 sm:mt-5">
+                className="w-full btn-primary-gradient font-mono text-xs font-bold text-white py-3 sm:py-3.5 rounded-xl hover:scale-[1.01] transition-transform flex items-center justify-center gap-2 cursor-pointer mt-5">
                 {isSaved ? (<><Check className="h-4 w-4 text-green-300" /> MARKS SAVED</>)
                   : (<><ShieldCheck className="h-4 w-4" /> SAVE ALL MARKS</>)}
               </button>
             </form>
           ) : (
-            <div className="glass-panel rounded-xl p-6 sm:p-10 border border-white/[0.06] flex flex-col items-center justify-center text-center h-full">
-              <Trophy className="h-10 sm:h-12 w-10 sm:w-12 text-white/10 mb-3 sm:mb-4" />
-              <h3 className="font-display font-bold text-white text-base sm:text-lg">Evaluation In Progress</h3>
-              <p className="font-mono text-[11px] sm:text-xs text-white/35 mt-2 max-w-xs leading-relaxed">
-                Score updates are restricted to event coordinators. Results will reflect here as tasks are graded.
-              </p>
+            /* Live Evaluation Breakdown View for Participants / Viewers */
+            <div className="glass-panel rounded-xl p-5 sm:p-7 border border-white/[0.08] space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+                <div className="flex items-center gap-2.5">
+                  <FileText className="h-5 w-5 text-primary-red" />
+                  <h2 className="font-mono text-base font-bold text-white uppercase tracking-widest">Detailed Evaluation Breakdown</h2>
+                </div>
+                <span className="font-mono text-xs text-white/40 font-semibold">100 Marks per Task</span>
+              </div>
+
+              <div className="space-y-6">
+                {TASK_MAP.map(({ label, key }) => {
+                  const taskTotal = calcTaskTotal(team.metrics, key as any);
+                  return (
+                    <div key={key} className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 sm:p-5 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-display font-bold text-sm sm:text-base text-white">{label}</h3>
+                        <span className="font-mono text-base sm:text-lg font-bold text-primary-red">{taskTotal} <span className="text-white/30 text-xs font-mono">/ 100</span></span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
+                        {EVALUATION_CRITERIA.map(crit => {
+                          const pts = Number(team.metrics[`${key}_${crit.key}` as keyof Team["metrics"]]) || 0;
+                          return (
+                            <div key={crit.key} className="bg-black/30 border border-white/[0.04] p-2.5 rounded-lg flex justify-between items-center">
+                              <span className="text-white/60 text-[11px]">{crit.label}</span>
+                              <span className="font-bold text-white"><span className="text-primary-red">{pts}</span> / {crit.max}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="bg-primary-red/[0.04] border border-primary-red/20 rounded-xl p-4 flex items-center justify-between font-mono text-xs">
+                <span className="text-white/60">Phase 2 Cumulative Score</span>
+                <span className="font-display font-black text-2xl text-primary-red">{savedTotal} <span className="text-white/30 text-xs font-mono">/ 300 PTS</span></span>
+              </div>
             </div>
           )}
         </div>
@@ -286,3 +306,4 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
     </div>
   );
 }
+

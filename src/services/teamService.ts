@@ -15,22 +15,45 @@ export interface SupabaseTeamRow {
   updated_at: string;
 }
 
+export function calcTaskTotal(metrics: TeamMetrics, taskPrefix: "t1" | "t2" | "t3"): number {
+  const topology = Number(metrics[`${taskPrefix}_topology` as keyof TeamMetrics]) || 0;
+  const calc = Number(metrics[`${taskPrefix}_calc` as keyof TeamMetrics]) || 0;
+  const model = Number(metrics[`${taskPrefix}_model` as keyof TeamMetrics]) || 0;
+  const perf = Number(metrics[`${taskPrefix}_perf` as keyof TeamMetrics]) || 0;
+  const eff = Number(metrics[`${taskPrefix}_eff` as keyof TeamMetrics]) || 0;
+  const report = Number(metrics[`${taskPrefix}_report` as keyof TeamMetrics]) || 0;
+
+  const newTotal = topology + calc + model + perf + eff + report;
+  if (newTotal > 0) return newTotal;
+
+  // Fallback to legacy fields
+  const circuit = Number(metrics[`${taskPrefix}_circuit` as keyof TeamMetrics]) || 0;
+  const legacyReport = Number(metrics[`${taskPrefix}_report` as keyof TeamMetrics]) || 0;
+  const result = Number(metrics[`${taskPrefix}_result` as keyof TeamMetrics]) || 0;
+  return circuit + legacyReport + result;
+}
+
 export function calcTotalPoints(metrics: TeamMetrics): number {
-  return (
-    (metrics.t1_circuit || 0) +
-    (metrics.t1_report || 0) +
-    (metrics.t1_result || 0) +
-    (metrics.t2_circuit || 0) +
-    (metrics.t2_report || 0) +
-    (metrics.t2_result || 0) +
-    (metrics.t3_circuit || 0) +
-    (metrics.t3_report || 0) +
-    (metrics.t3_result || 0)
-  );
+  return calcTaskTotal(metrics, "t1") + calcTaskTotal(metrics, "t2") + calcTaskTotal(metrics, "t3");
 }
 
 // Convert from DB row to application model
 export function mapRowToTeam(row: SupabaseTeamRow, index: number): Team {
+  // Parse members from row or tags array
+  let parsedMembers = (row.metrics as any)?.membersList;
+  if (!parsedMembers && row.tags && row.tags.length > 0) {
+    parsedMembers = row.tags.map(t => {
+      if (t.includes("(") && t.includes(")")) {
+        const parts = t.split("(");
+        const name = parts[0].trim();
+        const sub = parts[1].replace(")", "").trim();
+        const subParts = sub.split("-");
+        return { name, dept: subParts[0]?.trim() || "", year: subParts[1]?.trim() || "" };
+      }
+      return { name: t, dept: "", year: "" };
+    });
+  }
+
   return {
     id: row.id,
     rank: index + 1,
@@ -42,6 +65,7 @@ export function mapRowToTeam(row: SupabaseTeamRow, index: number): Team {
     lastUpdated: row.last_updated || "Just now",
     runHistory: row.run_history || [],
     tags: row.tags || [],
+    members: parsedMembers || [],
   };
 }
 

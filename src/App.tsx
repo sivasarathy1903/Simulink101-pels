@@ -29,9 +29,13 @@ import { teamService, calcTotalPoints } from "./services/teamService";
 import { supabase } from "./lib/supabase";
 import LeaderboardTable from "./components/LeaderboardTable";
 import TeamTelemetryDetails from "./components/TeamTelemetryDetails";
+import TaskDetailPage, { TASK_CONFIGS } from "./components/TaskDetailPage";
+import RulebookPage from "./components/RulebookPage";
+import ResourcesPage from "./components/ResourcesPage";
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<"home" | "leaderboard">("home");
+  const [currentTab, setCurrentTab] = useState<"home" | "tasks" | "leaderboard" | "rulebook" | "resources">("home");
+  const [activeTaskNumber, setActiveTaskNumber] = useState<number | null>(null);
   const { teams } = useTeams();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
@@ -308,7 +312,7 @@ export default function App() {
       {/* ─── NAV ─── */}
       <nav className="fixed top-0 w-full z-50 bg-[#070709]/80 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
         <div className="flex justify-between items-center px-3 sm:px-6 md:px-12 py-3 max-w-[1440px] mx-auto">
-          <div onClick={() => { setCurrentTab("home"); setSelectedTeam(null); }} className="flex items-center gap-2 sm:gap-3.5 cursor-pointer group shrink-0">
+          <div onClick={() => { setCurrentTab("home"); setSelectedTeam(null); setActiveTaskNumber(null); }} className="flex items-center gap-2 sm:gap-3.5 cursor-pointer group shrink-0">
             <img alt="IEEE PELS" className="h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-white/10 group-hover:border-primary-red/40 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhT7QIUE14McBjVbaSVgLbQU9Rskq807b4yTeIq433ZYqnXk0jH5wCkIHv7aFintnvmMEPMB8U6dzNDoCltxJIlTa1QfcbTFv-BMzBuvE-m-GH5LG8dcz-njxhfytuRde4mq-BPrltR_gDGpVQ7dZuCNEtLZy3K7ttEPoq6_sas0yedeCB344eHCiEQx9EOWuuiE-CXTRnBmGJqnhwcoFV2fUFiWM_YObS8Q1g-wvE74BsUdQU2Ic2Xg-kKlB3ZqJj3uA" />
             <div>
               <div className="font-display font-black text-sm sm:text-base text-white leading-none tracking-widest group-hover:text-primary-red transition-colors">SIMVERSE</div>
@@ -316,11 +320,17 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-0.5 sm:gap-1">
-            {["home", "leaderboard"].map(tab => (
-              <button key={tab} onClick={() => { setCurrentTab(tab as any); setSelectedTeam(null); }}
-                className={`font-mono text-[9px] sm:text-[10px] font-bold tracking-wider sm:tracking-widest px-2.5 sm:px-4 py-1.5 rounded transition-all cursor-pointer uppercase ${currentTab === tab && !selectedTeam ? "text-primary-red border-b border-primary-red" : "text-white/50 hover:text-white"}`}>
-                {tab === "home" ? "Home" : "Leaderboard"}
+          <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto no-scrollbar">
+            {[
+              { id: "home", label: "Home" },
+              { id: "tasks", label: "Tasks" },
+              { id: "leaderboard", label: "Leaderboard" },
+              { id: "rulebook", label: "Rulebook" },
+              { id: "resources", label: "Resources" },
+            ].map(tab => (
+              <button key={tab.id} onClick={() => { setCurrentTab(tab.id as any); setSelectedTeam(null); setActiveTaskNumber(null); }}
+                className={`font-mono text-[9px] sm:text-[10px] font-bold tracking-wider sm:tracking-widest px-2 sm:px-3 py-1.5 rounded transition-all cursor-pointer uppercase shrink-0 ${currentTab === tab.id && !selectedTeam && !activeTaskNumber ? "text-primary-red border-b border-primary-red" : "text-white/50 hover:text-white"}`}>
+                {tab.label}
               </button>
             ))}
           </div>
@@ -373,6 +383,70 @@ export default function App() {
                 </motion.div>
               );
             })()
+          ) : activeTaskNumber ? (
+            <motion.div key={`task-${activeTaskNumber}`} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.28 }}>
+              <TaskDetailPage
+                taskNumber={activeTaskNumber}
+                onBack={() => setActiveTaskNumber(null)}
+                currentUser={currentUser}
+                teams={teams}
+                submittedLinks={submittedLinks}
+                onSaveSubmission={async (linkKey, linkVal) => {
+                  if (!currentUser.teamId) return;
+                  const t = teams.find(t => t.id === currentUser.teamId);
+                  if (t) {
+                    await teamService.updateTeamSubmission(t.id, linkKey, linkVal);
+                    setSubmittedLinks(prev => ({ ...prev, [linkKey]: linkVal }));
+                  }
+                }}
+                onNavigateRulebook={() => { setActiveTaskNumber(null); setCurrentTab("rulebook"); }}
+                onNavigateResources={() => { setActiveTaskNumber(null); setCurrentTab("resources"); }}
+              />
+            </motion.div>
+          ) : currentTab === "tasks" ? (
+            <motion.div key="tasks-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }} className="w-full max-w-6xl mx-auto py-12 px-4 sm:px-8 mt-14 font-sans text-white">
+              <div className="mb-10 text-center">
+                <span className="font-mono text-[10px] text-primary-red uppercase tracking-widest block mb-2">Engineering Challenges</span>
+                <h1 className="font-display font-black text-4xl sm:text-5xl text-white tracking-tight">Phase 2 Tasks</h1>
+                <p className="font-mono text-xs sm:text-sm text-white/40 mt-2 max-w-xl mx-auto">Select a task below to view detailed specifications, topology candidates, evaluation criteria, and submit your solution.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map(num => {
+                  const cfg = TASK_CONFIGS[num];
+                  const rel = configTeam?.metrics?.[`task${num}Released` as keyof typeof configTeam.metrics] !== false;
+                  return (
+                    <motion.div
+                      key={num}
+                      whileHover={{ y: -6, scale: 1.02 }}
+                      onClick={() => setActiveTaskNumber(num)}
+                      className={`relative rounded-2xl p-7 border cursor-pointer flex flex-col justify-between transition-all shadow-xl ${rel ? 'border-primary-red/30 bg-gradient-to-br from-primary-red/[0.06] via-black/40 to-transparent hover:border-primary-red/60' : 'border-white/10 bg-white/[0.02]'}`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-4">
+                          <span className="font-mono text-xs font-bold text-primary-red bg-primary-red/10 border border-primary-red/25 px-2.5 py-1 rounded-full uppercase tracking-widest">
+                            TASK {num}
+                          </span>
+                          {rel ? (
+                            <span className="font-mono text-[9px] text-green-400 bg-green-500/10 border border-green-500/25 px-2 py-0.5 rounded-full">ACTIVE</span>
+                          ) : (
+                            <span className="font-mono text-[9px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/25 px-2 py-0.5 rounded-full">LOCKED</span>
+                          )}
+                        </div>
+
+                        <h3 className="font-display font-black text-2xl text-white mb-2">{cfg.product}</h3>
+                        <p className="font-mono text-xs text-primary-red/90 font-semibold mb-4">{cfg.givenSpecs.power} · {cfg.givenSpecs.output}</p>
+                        <p className="font-sans text-xs text-white/60 leading-relaxed line-clamp-3 mb-6">{cfg.taskStatement}</p>
+                      </div>
+
+                      <button className="w-full btn-primary-gradient font-mono text-xs font-bold text-white py-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-primary-red/20">
+                        VIEW DEDICATED TASK PAGE →
+                      </button>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
           ) : currentTab === "home" ? (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}>
 
@@ -479,183 +553,62 @@ export default function App() {
                     <div>
                       <span className="font-mono text-[10px] text-primary-red tracking-widest uppercase mb-1.5 sm:mb-2 block">Event Flow</span>
                       <h2 className="font-display font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight">Phase 2 Challenge</h2>
-                      <p className="font-mono text-[11px] sm:text-xs text-white/40 mt-1 sm:mt-2">Tasks unlock sequentially — each phase builds on the last.</p>
+                      <p className="font-mono text-[11px] sm:text-xs text-white/40 mt-1 sm:mt-2">Click any task below to open its dedicated specifications and submission portal.</p>
                     </div>
                     <button onClick={() => setCurrentTab("leaderboard")} className="font-mono text-xs text-white/40 hover:text-primary-red flex items-center gap-2 mt-2 md:mt-0 cursor-pointer group transition-colors">
                       LEADERBOARD <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                     </button>
                   </div>
 
-                  {/* Admin Controls */}
-                  {currentUser.role === "admin" && (
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                      className="bg-primary-red/[0.04] border border-primary-red/20 rounded-xl p-4 sm:p-6 mb-8 sm:mb-10">
-                      <div className="flex items-center gap-2 mb-4 sm:mb-5">
-                        <Sliders className="h-4 w-4 text-primary-red" />
-                        <span className="font-mono text-xs font-bold text-white tracking-widest uppercase">Admin Task Controls</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
-                        {[
-                          { label: "TASK 1", relKey: "task1Released", released: task1Released },
-                          { label: "TASK 2", relKey: "task2Released", released: task2Released },
-                          { label: "TASK 3", relKey: "task3Released", released: task3Released },
-                        ].map(({ label, relKey, released }) => (
-                          <div key={label} className="bg-white/[0.03] border border-white/10 rounded-lg p-3.5 sm:p-4 flex flex-col gap-2.5 sm:gap-3">
-                            <span className="font-mono text-[10px] text-white/50 font-bold">{label}</span>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input type="checkbox" checked={released}
-                                onChange={e => handleUpdateConfig({ [relKey]: e.target.checked })}
-                                className="accent-primary-red w-3.5 h-3.5" />
-                              <span className="font-mono text-[11px] text-white">{released ? "🟢 Released" : "🔴 Locked"}</span>
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
                   {/* Task Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-                    {tasks.map(({ key, title, subtitle, desc, released, linkKey, Icon }, idx) => {
+                    {[1, 2, 3].map(num => {
+                      const cfg = TASK_CONFIGS[num];
+                      const released = configTeam?.metrics?.[`task${num}Released` as keyof typeof configTeam.metrics] !== false;
+                      const linkKey = `task${num}Link`;
+
                       return (
-                      <motion.div
-                        key={key}
-                        initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 + 0.2 }}
-                        whileHover={{ y: -5, scale: 1.015 }}
-                        className={`relative rounded-xl p-5 sm:p-7 flex flex-col gap-4 sm:gap-5 border overflow-hidden transition-all duration-300 ${released ? 'border-primary-red/30 bg-gradient-to-br from-primary-red/[0.05] to-transparent hover:border-primary-red/50' : 'border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:border-white/20'}`}
-                      >
-                        {/* Background number watermark */}
-                        <span className={`absolute -right-3 -bottom-4 font-display font-black text-[80px] sm:text-[120px] ${released ? 'text-primary-red/[0.05]' : 'text-white/[0.03]'} leading-none select-none pointer-events-none`}>{key}</span>
+                        <motion.div
+                          key={num}
+                          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: num * 0.1 }}
+                          whileHover={{ y: -5, scale: 1.015 }}
+                          onClick={() => setActiveTaskNumber(num)}
+                          className={`relative rounded-xl p-5 sm:p-7 flex flex-col gap-4 sm:gap-5 border overflow-hidden transition-all duration-300 cursor-pointer ${released ? 'border-primary-red/30 bg-gradient-to-br from-primary-red/[0.05] to-transparent hover:border-primary-red/50' : 'border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:border-white/20'}`}
+                        >
+                          {/* Background number watermark */}
+                          <span className={`absolute -right-3 -bottom-4 font-display font-black text-[80px] sm:text-[120px] ${released ? 'text-primary-red/[0.05]' : 'text-white/[0.03]'} leading-none select-none pointer-events-none`}>{num}</span>
 
-                        <div className="flex items-center gap-3">
-                          <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-lg ${released ? 'bg-primary-red/[0.1] border-primary-red/20' : 'bg-white/[0.06] border-white/10'} border flex items-center justify-center shrink-0`}>
-                            <Icon className={`h-4 sm:h-5 w-4 sm:w-5 ${released ? 'text-primary-red' : 'text-white/30'}`} />
-                          </div>
-                          <span className={`font-mono text-[10px] font-bold ${released ? 'text-primary-red/80' : 'text-white/30'} tracking-widest`}>{title.toUpperCase()}</span>
-                        </div>
-
-                        <div>
-                          <h3 className={`font-display font-bold text-2xl sm:text-3xl ${released ? 'text-white' : 'text-white/50'}`}>{title}</h3>
-
-                          {released ? (
-                            <div className="mt-3 sm:mt-4 flex flex-col gap-2.5 sm:gap-3">
-                              <h4 className="font-mono text-xs text-primary-red/80 uppercase tracking-wide">{subtitle}</h4>
-                              <p className="text-xs sm:text-sm text-white/60 leading-relaxed">{desc}</p>
-                              
-                              {currentUser.role === "team" && (
-                                <div className="mt-3 sm:mt-4 border-t border-white/[0.06] pt-3 sm:pt-4">
-                                  <label className="font-mono text-[9px] text-blue-400 uppercase tracking-widest mb-2 block">Drive Link Submission</label>
-
-                                  {submittedLinks[linkKey] && !draftLinks[`${linkKey}_editing`] ? (
-                                    /* ── SUBMITTED STATE ── */
-                                    <div className="bg-green-500/[0.06] border border-green-500/25 rounded-lg p-3">
-                                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                                        <span className="font-mono text-[9px] text-green-400 uppercase tracking-widest flex items-center gap-1">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" /> Submitted
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={() => setDraftLinks(prev => ({ ...prev, [`${linkKey}_editing`]: "true" }))}
-                                          className="font-mono text-[9px] text-white/40 hover:text-white border border-white/10 px-2 py-0.5 rounded transition-colors cursor-pointer"
-                                        >Edit</button>
-                                      </div>
-                                      <a href={submittedLinks[linkKey]} target="_blank" rel="noopener noreferrer"
-                                        className="text-white/70 text-xs break-all underline underline-offset-2 decoration-white/20 hover:text-white transition-colors">
-                                        {submittedLinks[linkKey]}
-                                      </a>
-                                    </div>
-                                  ) : (
-                                    /* ── INPUT + SUBMIT STATE ── */
-                                    <div className="flex flex-col gap-2">
-                                      <input
-                                        type="text"
-                                        placeholder="https://drive.google.com/..."
-                                        value={draftLinks[linkKey] ?? ""}
-                                        onChange={(e) => setDraftLinks(prev => ({ ...prev, [linkKey]: e.target.value }))}
-                                        className="bg-[#070709] border border-white/15 text-xs text-white px-3 py-2 sm:py-2.5 rounded-lg outline-none focus:border-blue-400/70 font-mono w-full transition-colors"
-                                      />
-                                      <div className="flex gap-2">
-                                        <button
-                                          type="button"
-                                          disabled={!draftLinks[linkKey]?.trim() || savingLink[linkKey]}
-                                          onClick={async () => {
-                                            const val = draftLinks[linkKey]?.trim();
-                                            if (!val || !currentUser.teamId) return;
-                                            setSavingLink(prev => ({ ...prev, [linkKey]: true }));
-                                            try {
-                                              const t = teams.find(t => t.id === currentUser.teamId);
-                                              if (t) {
-                                                await teamService.updateTeamSubmission(t.id, linkKey, val);
-                                                setSubmittedLinks(prev => ({ ...prev, [linkKey]: val }));
-                                                setDraftLinks(prev => { const n = { ...prev }; delete n[`${linkKey}_editing`]; return n; });
-                                              }
-                                            } catch (err) {
-                                              console.error("Failed to save submission", err);
-                                            } finally {
-                                              setSavingLink(prev => ({ ...prev, [linkKey]: false }));
-                                            }
-                                          }}
-                                          className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-mono text-[10px] font-bold uppercase tracking-widest py-2 px-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                                        >
-                                          {savingLink[linkKey] ? "Saving…" : "Submit Link"}
-                                        </button>
-                                        {submittedLinks[linkKey] && (
-                                          <button
-                                            type="button"
-                                            onClick={() => setDraftLinks(prev => { const n = { ...prev }; delete n[`${linkKey}_editing`]; n[linkKey] = submittedLinks[linkKey]; return n; })}
-                                            className="font-mono text-[10px] text-white/40 hover:text-white border border-white/10 px-3 py-2 rounded-lg transition-colors cursor-pointer"
-                                          >Cancel</button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
+                          <div className="flex items-center gap-3">
+                            <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-lg ${released ? 'bg-primary-red/[0.1] border-primary-red/20' : 'bg-white/[0.06] border-white/10'} border flex items-center justify-center shrink-0`}>
+                              <Cpu className={`h-4 sm:h-5 w-4 sm:w-5 ${released ? 'text-primary-red' : 'text-white/30'}`} />
                             </div>
-                          ) : (
-                            /* Jail / locked animation */
-                            <div className="mt-4 relative flex items-center justify-center h-16 rounded-lg overflow-hidden bg-black/30 border border-white/[0.07]">
-                              {/* Bars */}
-                              {[0,1,2,3,4,5].map(i => (
-                                <motion.div
-                                  key={i}
-                                  className="absolute top-0 bottom-0 w-[3px] rounded-full bg-gradient-to-b from-white/25 via-white/10 to-white/25"
-                                  style={{ left: `${14 + i * 14}%` }}
-                                  animate={{ scaleY: [1, 0.92, 1], opacity: [0.5, 0.3, 0.5] }}
-                                  transition={{ duration: 2.2, delay: i * 0.18, repeat: Infinity, ease: "easeInOut" }}
-                                />
-                              ))}
-                              {/* Lock icon centre */}
-                              <motion.div
-                                className="relative z-10 flex flex-col items-center gap-1"
-                                animate={{ y: [0, -2, 0] }}
-                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                              >
+                            <span className={`font-mono text-[10px] font-bold ${released ? 'text-primary-red/80' : 'text-white/30'} tracking-widest`}>TASK {num}</span>
+                          </div>
+
+                          <div>
+                            <h3 className={`font-display font-bold text-xl sm:text-2xl ${released ? 'text-white' : 'text-white/50'}`}>{cfg.product}</h3>
+
+                            {released ? (
+                              <div className="mt-3 sm:mt-4 flex flex-col gap-2">
+                                <h4 className="font-mono text-xs text-primary-red/80 uppercase tracking-wide">{cfg.givenSpecs.power} · {cfg.givenSpecs.output}</h4>
+                                <p className="text-xs sm:text-sm text-white/60 leading-relaxed line-clamp-3">{cfg.taskStatement}</p>
+                              </div>
+                            ) : (
+                              <div className="mt-4 relative flex items-center justify-center h-16 rounded-lg overflow-hidden bg-black/30 border border-white/[0.07]">
                                 <Lock className="h-5 w-5 text-white/40" />
-                                <span className="font-mono text-[9px] text-white/25 tracking-widest uppercase">Locked</span>
-                              </motion.div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="pt-4 border-t border-white/[0.06] mt-auto">
-                          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center">
-                            <div className="bg-white/[0.03] rounded-lg py-2.5 sm:py-3">
-                              <p className="font-display font-black text-white/50 text-xl sm:text-2xl">30</p>
-                              <p className="font-mono text-[8px] sm:text-[10px] text-white/30 mt-0.5 tracking-wider sm:tracking-widest uppercase">Circuit</p>
-                            </div>
-                            <div className="bg-white/[0.03] rounded-lg py-2.5 sm:py-3">
-                              <p className="font-display font-black text-white/50 text-xl sm:text-2xl">30</p>
-                              <p className="font-mono text-[8px] sm:text-[10px] text-white/30 mt-0.5 tracking-wider sm:tracking-widest uppercase">Report</p>
-                            </div>
-                            <div className="bg-white/[0.03] rounded-lg py-2.5 sm:py-3">
-                              <p className="font-display font-black text-white/50 text-xl sm:text-2xl">40</p>
-                              <p className="font-mono text-[8px] sm:text-[10px] text-white/30 mt-0.5 tracking-wider sm:tracking-widest uppercase">Result</p>
-                            </div>
+                                <span className="font-mono text-[9px] text-white/25 tracking-widest uppercase ml-2">Locked</span>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </motion.div>
-                    );})}
+
+                          <div className="pt-4 border-t border-white/[0.06] mt-auto">
+                            <button className="w-full btn-primary-gradient font-mono text-[10px] font-bold text-white py-2.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-widest shadow-md">
+                              OPEN DEDICATED TASK PAGE →
+                            </button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
 
                   {/* Scoring info */}
@@ -663,7 +616,7 @@ export default function App() {
                     <Trophy className="h-5 w-5 text-yellow-400 shrink-0" />
                     <div>
                       <p className="font-mono text-xs text-white font-semibold">CUMULATIVE SCORING</p>
-                      <p className="font-mono text-[10px] text-white/40 mt-0.5">Each task contributes up to 100 points (Circuit 30 + Report 30 + Result 40). Scores accumulate across all three tasks.</p>
+                      <p className="font-mono text-[10px] text-white/40 mt-0.5">Each task is evaluated out of 100 points based on the 6 evaluation criteria. Total max score: 300 points across all three tasks.</p>
                     </div>
                   </div>
                 </div>
@@ -671,11 +624,19 @@ export default function App() {
 
             </motion.div>
 
-          ) : (
+          ) : currentTab === "leaderboard" ? (
             <motion.div key="lb" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.28 }}>
               <LeaderboardTable teams={filteredTeams} onSelectTeam={setSelectedTeam} onRegisterTeam={handleRegisterTeam} onDeleteTeam={async (id) => { try { await teamService.deleteTeam(id); } catch (err) { console.error(err); alert("Failed to delete team."); } }} isAdmin={currentUser.role === "admin"} />
             </motion.div>
-          )}
+          ) : currentTab === "rulebook" ? (
+            <motion.div key="rulebook" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.28 }}>
+              <RulebookPage />
+            </motion.div>
+          ) : currentTab === "resources" ? (
+            <motion.div key="resources" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.28 }}>
+              <ResourcesPage />
+            </motion.div>
+          ) : null}
 
         </AnimatePresence>
       </main>
@@ -683,10 +644,10 @@ export default function App() {
       {/* ─── FOOTER ─── */}
       <footer className="w-full py-8 bg-black/60 border-t border-white/[0.06] font-mono text-[10px] text-white/30">
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-4">
-          <span className="text-white font-bold tracking-widest">SIMVERSE <span className="text-primary-red font-normal">v1.0</span></span>
+          <span className="text-white font-bold tracking-widest">SIMVERSE <span className="text-primary-red font-normal">v2.0</span></span>
           <span>© 2026 IEEE Power Electronics Society. All rights reserved.</span>
           <div className="flex gap-4 items-center">
-            <a href="#" className="hover:text-primary-red transition-colors">Credits</a>
+            <a href="https://drive.google.com/file/d/12Xsby0psAvJR6gGXaD_EpL0zbZKzl0Zd/view?usp=sharing" target="_blank" rel="noopener noreferrer" className="hover:text-primary-red transition-colors">Rulebook (PDF)</a>
             <span>·</span>
             <span className="flex items-center gap-1"><Heart className="h-2.5 w-2.5 text-primary-red fill-primary-red" /> SSN</span>
           </div>
@@ -738,7 +699,7 @@ export default function App() {
                       <label className="font-mono text-[9px] text-white/40 uppercase tracking-widest">Username</label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
-                        <input type="text" required value={loginUsername} onChange={e => setLoginUsername(e.target.value)} placeholder="admin"
+                        <input type="text" required value={loginUsername} onChange={e => setLoginUsername(e.target.value)} placeholder="admin or team name"
                           className="w-full bg-white/[0.04] border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-xs text-white font-mono placeholder:text-white/15 focus:outline-none focus:border-primary-red/50 transition-colors" />
                       </div>
                     </div>
@@ -751,7 +712,7 @@ export default function App() {
                       </div>
                     </div>
                     <button type="submit" className="w-full btn-primary-gradient text-white font-mono text-xs font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:scale-[1.01] transition-transform cursor-pointer mt-2">
-                      <LogIn className="h-4 w-4" /> SIGN IN AS ADMIN
+                      <LogIn className="h-4 w-4" /> SIGN IN
                     </button>
                   </form>
                 </>

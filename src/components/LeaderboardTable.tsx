@@ -17,21 +17,48 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
   const [formName, setFormName] = useState("");
   const [formDept, setFormDept] = useState("");
   const [formYear, setFormYear] = useState("");
-  const [members, setMembers] = useState<string[]>([""]);
+  
+  // Structured member state
+  const [participantList, setParticipantList] = useState<{ name: string; dept: string; year: string }[]>([
+    { name: "", dept: "", year: "" }
+  ]);
 
   const sorted = [...teams]
     .sort((a, b) => b.totalPoints - a.totalPoints)
     .map((t, i) => ({ ...t, rank: i + 1 }))
     .filter(t =>
       t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.tags.some(m => m.toLowerCase().includes(searchTerm.toLowerCase()))
+      t.tags.some(m => m.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      t.members?.some(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()) || m.dept.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim() || !formDept.trim() || !formYear.trim()) return;
-    onRegisterTeam({ name: formName.trim(), dept: formDept.trim(), year: formYear.trim(), members: members.filter(m => m.trim()) });
-    setFormName(""); setFormDept(""); setFormYear(""); setMembers([""]); setIsRegisterOpen(false);
+    if (!formName.trim()) return;
+
+    // Default team-level dept & year from first participant if not specified
+    const primaryDept = formDept.trim() || participantList[0]?.dept || "EEE";
+    const primaryYear = formYear.trim() || participantList[0]?.year || "3rd";
+
+    // Formatted member string list for tags/storage
+    const formattedMembers = participantList
+      .filter(p => p.name.trim())
+      .map(p => {
+        const d = p.dept.trim() || primaryDept;
+        const y = p.year.trim() || primaryYear;
+        return `${p.name.trim()} (${d} - ${y})`;
+      });
+
+    onRegisterTeam({
+      name: formName.trim(),
+      dept: primaryDept,
+      year: primaryYear,
+      members: formattedMembers,
+    });
+
+    setFormName(""); setFormDept(""); setFormYear("");
+    setParticipantList([{ name: "", dept: "", year: "" }]);
+    setIsRegisterOpen(false);
   };
 
   const top3 = sorted.slice(0, 3);
@@ -49,7 +76,7 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-8 sm:py-12 px-3 sm:px-6 md:px-8 mt-14">
+    <div className="w-full max-w-6xl mx-auto py-8 sm:py-12 px-3 sm:px-6 md:px-8 mt-14 font-sans">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 sm:gap-4 mb-8 sm:mb-10 border-b border-white/[0.06] pb-4 sm:pb-6">
@@ -70,7 +97,7 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
       <div className="mb-6 sm:mb-8">
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
-          <input type="text" placeholder="Search teams…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+          <input type="text" placeholder="Search team or participant name/dept…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
             className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-primary-red/50 text-xs text-white pl-9 pr-4 py-2 outline-none rounded-lg transition-all" />
         </div>
       </div>
@@ -84,7 +111,6 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
               const cfg = podiumConfig[team.rank];
               if (!cfg) return null;
               
-              // Mobile-adjusted height mapping
               const mobileHeight = team.rank === 1 ? "h-44 sm:h-52" : team.rank === 2 ? "h-36 sm:h-44" : "h-32 sm:h-40";
 
               return (
@@ -102,7 +128,11 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
 
                   <div className="pt-2 sm:pt-3 flex flex-col gap-0.5 sm:gap-1">
                     <h3 className="font-display font-black text-xs sm:text-base md:text-lg text-white leading-tight line-clamp-2">{team.name}</h3>
-                    <p className="font-mono text-[8px] sm:text-[9px] text-white/35">{team.tags.length > 0 ? `${team.tags.length} member${team.tags.length !== 1 ? 's' : ''}` : "—"}</p>
+                    <p className="font-mono text-[8px] sm:text-[9px] text-white/35">
+                      {team.members && team.members.length > 0
+                        ? `${team.members.length} Participants`
+                        : team.tags.length > 0 ? `${team.tags.length} Members` : "—"}
+                    </p>
                   </div>
 
                   <div className="flex flex-col items-center">
@@ -126,34 +156,48 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
       {sorted.length > 0 && (
         <div className="glass-panel rounded-xl overflow-hidden border border-white/[0.06] shadow-xl mb-6 sm:mb-8">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[320px]">
+            <table className="w-full text-left border-collapse min-w-[500px]">
               <thead>
                 <tr className="border-b border-white/[0.06] font-mono text-[9px] text-white/30 tracking-widest uppercase">
-                  <th className="py-3 sm:py-3.5 px-3 sm:px-5 text-center w-12 sm:w-16">POS</th>
-                  <th className="py-3 sm:py-3.5 px-3 sm:px-5">TEAM</th>
-                  <th className="py-3 sm:py-3.5 px-3 sm:px-5 text-right w-32 sm:w-48">TOTAL PTS</th>
-                  {isAdmin && <th className="py-3 sm:py-3.5 px-3 sm:px-5 w-10 sm:w-12" />}
+                  <th className="py-3.5 px-4 text-center w-14">POS</th>
+                  <th className="py-3.5 px-4">TEAM & PARTICIPANTS</th>
+                  <th className="py-3.5 px-4 text-right w-36">TOTAL PTS</th>
+                  {isAdmin && <th className="py-3.5 px-4 w-12" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
                 {sorted.map(team => (
                   <tr key={team.id} onClick={() => onSelectTeam(team)} className="group hover:bg-white/[0.02] cursor-pointer transition-colors">
-                    <td className="py-3 sm:py-4 px-3 sm:px-5 text-center">
-                      <div className="mx-auto w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center font-mono text-[10px] sm:text-[11px] text-white/50">{team.rank}</div>
+                    <td className="py-4 px-4 text-center">
+                      <div className="mx-auto w-7 h-7 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center font-mono text-[11px] text-white/50 font-bold">{team.rank}</div>
                     </td>
-                    <td className="py-3 sm:py-4 px-3 sm:px-5">
-                      <div className="font-display font-bold text-xs sm:text-sm text-white group-hover:text-primary-red transition-colors">{team.name}</div>
-                      {team.tags.length > 0 && (
-                        <div className="font-mono text-[8px] sm:text-[9px] text-white/30 mt-0.5 line-clamp-1">{team.tags.join(" · ")}</div>
-                      )}
+                    <td className="py-4 px-4">
+                      <div className="font-display font-bold text-sm sm:text-base text-white group-hover:text-primary-red transition-colors flex items-center gap-2">
+                        {team.name}
+                        {team.institution && <span className="font-mono text-[10px] text-white/30 font-normal">({team.institution})</span>}
+                      </div>
+
+                      {/* Display participant list with Dept and Year */}
+                      {team.members && team.members.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {team.members.map((m, idx) => (
+                            <span key={idx} className="font-mono text-[9px] bg-white/[0.04] border border-white/[0.08] text-white/70 px-2 py-0.5 rounded-md">
+                              👤 {m.name} {m.dept ? <span className="text-primary-red/80 font-semibold">({m.dept} {m.year ? `· ${m.year}` : ''})</span> : ''}
+                            </span>
+                          ))}
+                        </div>
+                      ) : team.tags.length > 0 ? (
+                        <div className="font-mono text-[9px] text-white/40 mt-1">{team.tags.join(" · ")}</div>
+                      ) : null}
                     </td>
-                    <td className="py-3 sm:py-4 px-3 sm:px-5 text-right">
+                    <td className="py-4 px-4 text-right">
                       <div className="inline-flex flex-col items-end gap-0.5">
-                        <span className="font-display font-black text-2xl sm:text-4xl text-primary-red leading-none">{team.totalPoints}</span>
+                        <span className="font-display font-black text-3xl sm:text-4xl text-primary-red leading-none">{team.totalPoints}</span>
+                        <span className="font-mono text-[8px] text-white/20">/ 300 PTS</span>
                       </div>
                     </td>
                     {isAdmin && (
-                      <td className="py-3 sm:py-4 px-2 sm:px-3" onClick={e => e.stopPropagation()}>
+                      <td className="py-4 px-3" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => {
                             if (window.confirm(`Delete team "${team.name}"? This cannot be undone.`)) {
@@ -176,8 +220,8 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
       )}
 
       {/* Scoring breakdown note */}
-      <div className="bg-white/[0.015] border border-white/[0.06] p-3.5 sm:p-4 rounded-xl font-mono text-[9px] sm:text-[10px] text-white/35 leading-relaxed">
-        Scores are cumulative across all 3 tasks. Each task carries: Circuit Design (30) · Report Submission (30) · Result (40) = 100 pts per task.
+      <div className="bg-white/[0.015] border border-white/[0.06] p-4 rounded-xl font-mono text-[10px] text-white/35 leading-relaxed">
+        Scores accumulate across all 3 tasks (Max 300 pts). Evaluation criteria: Topology Selection (15) · Calculations (15) · Simulation Model (20) · Output Performance (20) · Waveform Analysis (20) · Report Quality (10) = 100 pts per task.
       </div>
 
       {/* Register Team Modal */}
@@ -187,7 +231,7 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsRegisterOpen(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
             <motion.div initial={{ scale: 0.96, opacity: 0, y: 16 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0, y: 16 }}
-              className="relative w-full max-w-md bg-[#0D0D10] border border-white/10 rounded-2xl p-5 sm:p-7 z-10 shadow-2xl">
+              className="relative w-full max-w-lg bg-[#0D0D10] border border-white/10 rounded-2xl p-5 sm:p-7 z-10 shadow-2xl max-h-[90vh] overflow-y-auto">
               <button onClick={() => setIsRegisterOpen(false)} className="absolute top-4 right-4 text-white/30 hover:text-white cursor-pointer"><X className="h-4 w-4" /></button>
 
               <div className="mb-5 sm:mb-6">
@@ -202,38 +246,50 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
                     className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-white outline-none font-mono uppercase" />
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex flex-col gap-1.5 flex-1">
-                    <label className="font-mono text-[9px] sm:text-[10px] text-white/40 uppercase tracking-widest">Department</label>
-                    <input type="text" required placeholder="e.g. EEE" value={formDept} onChange={e => setFormDept(e.target.value)}
+                    <label className="font-mono text-[9px] sm:text-[10px] text-white/40 uppercase tracking-widest">Primary Department</label>
+                    <input type="text" placeholder="e.g. EEE / ECE / BME" value={formDept} onChange={e => setFormDept(e.target.value)}
                       className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-white outline-none font-mono uppercase" />
                   </div>
                   <div className="flex flex-col gap-1.5 sm:w-1/3">
                     <label className="font-mono text-[9px] sm:text-[10px] text-white/40 uppercase tracking-widest">Year</label>
-                    <input type="text" required placeholder="e.g. 3rd" value={formYear} onChange={e => setFormYear(e.target.value)}
+                    <input type="text" placeholder="e.g. 3rd" value={formYear} onChange={e => setFormYear(e.target.value)}
                       className="bg-white/[0.04] border border-white/10 focus:border-primary-red/60 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm text-white outline-none font-mono uppercase" />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Team Members</label>
-                    <button type="button" onClick={() => setMembers([...members, ""])}
+                    <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Participants Details (Name, Dept, Year)</label>
+                    <button type="button" onClick={() => setParticipantList([...participantList, { name: "", dept: "", year: "" }])}
                       className="font-mono text-[9px] bg-primary-red/15 hover:bg-primary-red/25 text-primary-red border border-primary-red/20 px-2.5 py-1 rounded-md flex items-center gap-1 cursor-pointer transition-colors">
-                      <Plus className="h-3 w-3" /> ADD
+                      <Plus className="h-3 w-3" /> ADD PARTICIPANT
                     </button>
                   </div>
-                  <div className="flex flex-col gap-2 max-h-52 overflow-y-auto">
-                    {members.map((m, i) => (
-                      <div key={i} className="flex gap-2 items-center">
-                        <input type="text" required placeholder={`Member ${i + 1}`} value={m}
-                          onChange={e => { const n = [...members]; n[i] = e.target.value; setMembers(n); }}
-                          className="flex-1 bg-white/[0.04] border border-white/10 focus:border-primary-red/50 rounded-lg px-3 py-2 text-xs text-white outline-none" />
-                        {members.length > 1 && (
-                          <button type="button" onClick={() => setMembers(members.filter((_, j) => j !== i))} className="text-white/25 hover:text-primary-red cursor-pointer p-1">
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        )}
+
+                  <div className="flex flex-col gap-3 max-h-60 overflow-y-auto p-1">
+                    {participantList.map((p, idx) => (
+                      <div key={idx} className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-mono text-[9px] text-primary-red uppercase font-bold">Participant {idx + 1}</span>
+                          {participantList.length > 1 && (
+                            <button type="button" onClick={() => setParticipantList(participantList.filter((_, j) => j !== idx))} className="text-white/30 hover:text-primary-red cursor-pointer">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <input type="text" required placeholder="Name" value={p.name}
+                            onChange={e => { const n = [...participantList]; n[idx].name = e.target.value; setParticipantList(n); }}
+                            className="bg-white/[0.04] border border-white/10 focus:border-primary-red/50 rounded-lg px-3 py-2 text-xs text-white outline-none" />
+                          <input type="text" placeholder="Dept (e.g. EEE)" value={p.dept}
+                            onChange={e => { const n = [...participantList]; n[idx].dept = e.target.value; setParticipantList(n); }}
+                            className="bg-white/[0.04] border border-white/10 focus:border-primary-red/50 rounded-lg px-3 py-2 text-xs text-white outline-none" />
+                          <input type="text" placeholder="Year (e.g. 3rd)" value={p.year}
+                            onChange={e => { const n = [...participantList]; n[idx].year = e.target.value; setParticipantList(n); }}
+                            className="bg-white/[0.04] border border-white/10 focus:border-primary-red/50 rounded-lg px-3 py-2 text-xs text-white outline-none" />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -244,7 +300,7 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
                     className="flex-1 font-mono text-xs text-white/40 bg-white/[0.04] border border-white/10 px-4 py-2.5 rounded-lg hover:bg-white/[0.07] cursor-pointer transition-colors">CANCEL</button>
                   <button type="submit"
                     className="flex-1 btn-primary-gradient font-mono text-xs font-bold text-white px-4 py-2.5 rounded-lg hover:scale-[1.01] transition-transform flex items-center justify-center gap-1.5 cursor-pointer">
-                    <ShieldCheck className="h-3.5 w-3.5" /> REGISTER
+                    <ShieldCheck className="h-3.5 w-3.5" /> REGISTER TEAM
                   </button>
                 </div>
               </form>
@@ -255,3 +311,4 @@ export default function LeaderboardTable({ teams, onSelectTeam, onRegisterTeam, 
     </div>
   );
 }
+

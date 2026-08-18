@@ -19,7 +19,8 @@ import {
   Key,
   User,
   X,
-  ShieldCheck
+  ShieldCheck,
+  Menu
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Team } from "./types";
@@ -36,6 +37,7 @@ import ResourcesPage from "./components/ResourcesPage";
 export default function App() {
   const [currentTab, setCurrentTab] = useState<"home" | "tasks" | "leaderboard" | "rulebook" | "resources">("home");
   const [activeTaskNumber, setActiveTaskNumber] = useState<number | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { teams } = useTeams();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
@@ -310,9 +312,10 @@ export default function App() {
     <div className="bg-[#070709] text-white min-h-screen selection:bg-primary-red selection:text-white flex flex-col overflow-x-hidden">
 
       {/* ─── NAV ─── */}
-      <nav className="fixed top-0 w-full z-50 bg-[#070709]/80 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
-        <div className="flex justify-between items-center px-3 sm:px-6 md:px-12 py-3 max-w-[1440px] mx-auto">
-          <div onClick={() => { setCurrentTab("home"); setSelectedTeam(null); setActiveTaskNumber(null); }} className="flex items-center gap-2 sm:gap-3.5 cursor-pointer group shrink-0">
+      <nav className="fixed top-0 w-full z-50 bg-[#070709]/85 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
+        <div className="flex justify-between items-center px-4 sm:px-6 md:px-12 py-3 max-w-[1440px] mx-auto">
+          {/* Logo & Brand */}
+          <div onClick={() => { setCurrentTab("home"); setSelectedTeam(null); setActiveTaskNumber(null); setIsMobileMenuOpen(false); }} className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer group shrink-0">
             <img alt="IEEE PELS" className="h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-white/10 group-hover:border-primary-red/40 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhT7QIUE14McBjVbaSVgLbQU9Rskq807b4yTeIq433ZYqnXk0jH5wCkIHv7aFintnvmMEPMB8U6dzNDoCltxJIlTa1QfcbTFv-BMzBuvE-m-GH5LG8dcz-njxhfytuRde4mq-BPrltR_gDGpVQ7dZuCNEtLZy3K7ttEPoq6_sas0yedeCB344eHCiEQx9EOWuuiE-CXTRnBmGJqnhwcoFV2fUFiWM_YObS8Q1g-wvE74BsUdQU2Ic2Xg-kKlB3ZqJj3uA" />
             <div>
               <div className="font-display font-black text-sm sm:text-base text-white leading-none tracking-widest group-hover:text-primary-red transition-colors">SIMVERSE</div>
@@ -320,7 +323,8 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto no-scrollbar">
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center gap-1">
             {[
               { id: "home", label: "Home" },
               { id: "tasks", label: "Tasks" },
@@ -329,44 +333,139 @@ export default function App() {
               { id: "resources", label: "Resources" },
             ].map(tab => (
               <button key={tab.id} onClick={() => { setCurrentTab(tab.id as any); setSelectedTeam(null); setActiveTaskNumber(null); }}
-                className={`font-mono text-[9px] sm:text-[10px] font-bold tracking-wider sm:tracking-widest px-2 sm:px-3 py-1.5 rounded transition-all cursor-pointer uppercase shrink-0 ${currentTab === tab.id && !selectedTeam && !activeTaskNumber ? "text-primary-red border-b border-primary-red" : "text-white/50 hover:text-white"}`}>
+                className={`font-mono text-[10px] font-bold tracking-wider px-3.5 py-1.5 rounded transition-all cursor-pointer uppercase shrink-0 ${currentTab === tab.id && !selectedTeam && !activeTaskNumber ? "text-primary-red border-b border-primary-red" : "text-white/50 hover:text-white"}`}>
                 {tab.label}
               </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {/* Desktop Auth Controls */}
+          <div className="hidden md:flex items-center gap-2.5 shrink-0">
             {currentUser.role === "admin" && (
               <>
-                <div className="hidden sm:flex items-center gap-1.5 bg-primary-red/10 border border-primary-red/25 px-2.5 py-1 rounded font-mono text-[9px] text-primary-red">
+                <div className="flex items-center gap-1.5 bg-primary-red/10 border border-primary-red/25 px-2.5 py-1 rounded font-mono text-[9px] text-primary-red">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary-red animate-ping" />
                   <span className="font-bold">ADMIN</span>
                 </div>
-                <button onClick={handleResetChallenge} className="hidden md:block font-mono text-[9px] text-white/25 hover:text-primary-red border border-white/5 px-2 py-1 rounded transition-all cursor-pointer">SEED DB</button>
-                <button onClick={handleLogout} className="font-mono text-[9px] font-bold text-white/60 hover:text-primary-red border border-white/10 bg-white/[0.03] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded flex items-center gap-1.5 transition-all cursor-pointer">
-                  <LogOut className="h-3 w-3" /> <span className="hidden xs:inline">SIGN OUT</span>
+                <button onClick={handleResetChallenge} className="font-mono text-[9px] text-white/25 hover:text-primary-red border border-white/5 px-2 py-1 rounded transition-all cursor-pointer">SEED DB</button>
+                <button onClick={handleLogout} className="font-mono text-[9px] font-bold text-white/60 hover:text-primary-red border border-white/10 bg-white/[0.03] px-3 py-1.5 rounded flex items-center gap-1.5 transition-all cursor-pointer">
+                  <LogOut className="h-3 w-3" /> <span>SIGN OUT</span>
                 </button>
               </>
             )}
             {currentUser.role === "team" && (
               <>
-                <div className="hidden sm:flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded font-mono text-[9px] text-blue-400">
+                <div className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded font-mono text-[9px] text-blue-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
-                  <span className="font-bold uppercase truncate max-w-[80px]">{teams.find(t => t.id === currentUser.teamId)?.name || "TEAM"}</span>
+                  <span className="font-bold uppercase truncate max-w-[90px]">{teams.find(t => t.id === currentUser.teamId)?.name || "TEAM"}</span>
                 </div>
-                <button onClick={handleLogout} className="font-mono text-[9px] font-bold text-white/60 hover:text-primary-red border border-white/10 bg-white/[0.03] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded flex items-center gap-1.5 transition-all cursor-pointer">
-                  <LogOut className="h-3 w-3" /> <span className="hidden xs:inline">SIGN OUT</span>
+                <button onClick={handleLogout} className="font-mono text-[9px] font-bold text-white/60 hover:text-primary-red border border-white/10 bg-white/[0.03] px-3 py-1.5 rounded flex items-center gap-1.5 transition-all cursor-pointer">
+                  <LogOut className="h-3 w-3" /> <span>SIGN OUT</span>
                 </button>
               </>
             )}
             {currentUser.role === "viewer" && (
               <button onClick={() => { setLoginError(""); setLoginUsername(""); setLoginPassword(""); setIsLoginModalOpen(true); }}
-                className="font-mono text-[9px] sm:text-[10px] font-bold text-white bg-primary-red hover:bg-red-700 px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1.5 transition-all shadow-lg shadow-primary-red/20 cursor-pointer">
-                <LogIn className="h-3 sm:h-3.5 w-3 sm:w-3.5" /> LOGIN
+                className="font-mono text-[10px] font-bold text-white bg-primary-red hover:bg-red-700 px-4 py-2 rounded flex items-center gap-1.5 transition-all shadow-lg shadow-primary-red/20 cursor-pointer">
+                <LogIn className="h-3.5 w-3.5" /> LOGIN
               </button>
             )}
           </div>
+
+          {/* Mobile Hamburger Button (Three Bars in corner) */}
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-white hover:border-primary-red/40 hover:text-primary-red transition-all cursor-pointer"
+              aria-label="Toggle Navigation Menu"
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="md:hidden overflow-hidden bg-[#0D0D10]/98 border-t border-white/[0.08] backdrop-blur-2xl px-4 py-4"
+            >
+              <div className="flex flex-col gap-1.5 mb-4">
+                {[
+                  { id: "home", label: "Home", icon: "🏠" },
+                  { id: "tasks", label: "Tasks", icon: "⚡" },
+                  { id: "leaderboard", label: "Leaderboard", icon: "🏆" },
+                  { id: "rulebook", label: "Rulebook", icon: "📄" },
+                  { id: "resources", label: "Resources", icon: "🛠️" },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setCurrentTab(tab.id as any);
+                      setSelectedTeam(null);
+                      setActiveTaskNumber(null);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-3 font-mono text-xs font-bold px-4 py-3 rounded-xl transition-all text-left uppercase ${
+                      currentTab === tab.id && !selectedTeam && !activeTaskNumber
+                        ? "bg-primary-red/15 text-primary-red border border-primary-red/30"
+                        : "text-white/70 hover:bg-white/[0.04] hover:text-white"
+                    }`}
+                  >
+                    <span>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Mobile Auth Section */}
+              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                {currentUser.role === "admin" && (
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-mono text-xs text-primary-red font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-primary-red animate-ping" /> ADMIN PORTAL
+                    </span>
+                    <button
+                      onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                      className="font-mono text-xs text-white/70 hover:text-primary-red border border-white/10 bg-white/[0.04] px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+                    >
+                      <LogOut className="h-3.5 w-3.5" /> SIGN OUT
+                    </button>
+                  </div>
+                )}
+                {currentUser.role === "team" && (
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-mono text-xs text-blue-400 font-bold truncate max-w-[150px]">
+                      👤 {teams.find(t => t.id === currentUser.teamId)?.name || "TEAM"}
+                    </span>
+                    <button
+                      onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                      className="font-mono text-xs text-white/70 hover:text-primary-red border border-white/10 bg-white/[0.04] px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+                    >
+                      <LogOut className="h-3.5 w-3.5" /> SIGN OUT
+                    </button>
+                  </div>
+                )}
+                {currentUser.role === "viewer" && (
+                  <button
+                    onClick={() => {
+                      setLoginError(""); setLoginUsername(""); setLoginPassword("");
+                      setIsLoginModalOpen(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full btn-primary-gradient font-mono text-xs font-bold text-white py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-primary-red/20"
+                  >
+                    <LogIn className="h-4 w-4" /> LOGIN TO PORTAL
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* ─── MAIN ─── */}

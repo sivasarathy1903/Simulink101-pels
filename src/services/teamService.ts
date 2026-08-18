@@ -170,36 +170,82 @@ export const teamService = {
     return null;
   },
 
-  async getTeamSubmissions(teamId: string): Promise<Record<string, string>> {
+  async getTeamSubmissions(teamId: string): Promise<Record<string, { link: string; submittedAt?: string }>> {
     const { data, error } = await supabase
       .from("submissions")
-      .select("task_key, drive_link")
+      .select("task_key, drive_link, updated_at, created_at")
       .eq("team_id", teamId);
       
     if (error) {
       console.error("Error fetching submissions:", error);
-      return {};
     }
 
-    const submissionsMap: Record<string, string> = {};
+    const submissionsMap: Record<string, { link: string; submittedAt?: string }> = {};
+    
+    // First fill from DB submissions table
     data?.forEach(row => {
-      submissionsMap[row.task_key] = row.drive_link;
+      submissionsMap[row.task_key] = {
+        link: row.drive_link,
+        submittedAt: row.updated_at || row.created_at,
+      };
     });
+
+    // Fallback: check team row metrics
+    const { data: teamData } = await supabase
+      .from("teams")
+      .select("metrics")
+      .eq("id", teamId)
+      .single();
+
+    if (teamData?.metrics) {
+      const m = teamData.metrics;
+      ["task1Link", "task2Link", "task3Link"].forEach(k => {
+        if (m[k] && typeof m[k] === "string" && !submissionsMap[k]) {
+          submissionsMap[k] = {
+            link: m[k] as string,
+            submittedAt: (m[`${k}_submittedAt`] as string) || undefined,
+          };
+        }
+      });
+    }
+
     return submissionsMap;
   },
 
   async updateTeamSubmission(teamId: string, taskKey: string, driveLink: string): Promise<void> {
-    const { error } = await supabase
+    const nowIso = new Date().toISOString();
+
+    // 1. Save to submissions table
+    const { error: subErr } = await supabase
       .from("submissions")
       .upsert({
         team_id: teamId,
         task_key: taskKey,
         drive_link: driveLink,
+        updated_at: nowIso,
       }, { onConflict: "team_id,task_key" });
 
-    if (error) {
-      console.error("Error updating team submission:", error);
-      throw error;
+    if (subErr) {
+      console.warn("Submissions table write note:", subErr.message);
+    }
+
+    // 2. Also update team metrics as backup timestamp store
+    const { data: teamRow } = await supabase
+      .from("teams")
+      .select("metrics")
+      .eq("id", teamId)
+      .single();
+
+    if (teamRow) {
+      const updatedMetrics = {
+        ...(teamRow.metrics || {}),
+        [taskKey]: driveLink,
+        [`${taskKey}_submittedAt`]: nowIso,
+      };
+      await supabase
+        .from("teams")
+        .update({ metrics: updatedMetrics, last_updated: "Just now" })
+        .eq("id", teamId);
     }
   }
 };

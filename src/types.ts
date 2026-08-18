@@ -39,6 +39,11 @@ export interface TeamMetrics {
   [key: string]: number | boolean | string | undefined;
 }
 
+export interface SubmissionInfo {
+  link: string;
+  submittedAt?: string;
+}
+
 export interface MemberDetail {
   name: string;
   dept: string;

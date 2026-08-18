@@ -23,7 +23,7 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
   const [isSaved, setIsSaved] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["t1", "t2", "t3"]));
   const [expandedSummaryTask, setExpandedSummaryTask] = useState<string>("t1");
-  const [submissions, setSubmissions] = useState<Record<string, string>>({});
+  const [submissions, setSubmissions] = useState<Record<string, { link: string; submittedAt?: string }>>({});
 
   useEffect(() => { 
     setDraftMetrics({ ...team.metrics });
@@ -31,6 +31,25 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
       teamService.getTeamSubmissions(team.id).then(setSubmissions);
     });
   }, [team]);
+
+  const formatSubmissionTime = (isoStr?: string) => {
+    if (!isoStr) return "";
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return d.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return isoStr;
+    }
+  };
 
   const handleField = (field: keyof Team["metrics"], max: number, val: string) => {
     const num = Math.min(max, Math.max(0, Number(val)));
@@ -171,25 +190,44 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                 )}
               </div>
 
-              {/* Submitted Links Panel */}
-              <div className="bg-blue-500/[0.04] border border-blue-500/20 rounded-lg p-3 sm:p-4 mb-4 sm:mb-5">
-                <h3 className="font-mono text-[10px] text-blue-400 uppercase tracking-widest mb-2.5 sm:mb-3 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" /> Team Submissions
+              {/* Submitted Links Panel with Timestamps */}
+              <div className="bg-blue-500/[0.04] border border-blue-500/20 rounded-xl p-3.5 sm:p-4 mb-4 sm:mb-5">
+                <h3 className="font-mono text-[10px] text-blue-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" /> Team Submissions & Timestamps
+                  </span>
+                  <span className="text-white/30 text-[9px]">For Admin Grading</span>
                 </h3>
-                <div className="space-y-2.5 sm:space-y-3">
+                <div className="space-y-3">
                   {[1, 2, 3].map(num => {
-                    const link = submissions[`task${num}Link`];
+                    const subInfo = submissions[`task${num}Link`];
+                    const link = subInfo?.link || (team.metrics[`task${num}Link`] as string);
+                    const timestampStr = subInfo?.submittedAt || (team.metrics[`task${num}Link_submittedAt`] as string) || (team.metrics[`task${num}_submittedAt`] as string);
+                    const formattedTime = formatSubmissionTime(timestampStr);
+
                     return (
-                      <div key={num} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-white/[0.02] p-2.5 rounded border border-white/[0.05]">
-                        <span className="font-mono text-[9px] text-white/40 shrink-0 w-12">Task {num}</span>
+                      <div key={num} className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[10px] font-bold text-primary-red uppercase">Task {num}</span>
+                          {link ? (
+                            <span className="font-mono text-[9px] text-green-400 bg-green-500/10 border border-green-500/25 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              ✓ Submitted {formattedTime ? `· ${formattedTime}` : ''}
+                            </span>
+                          ) : (
+                            <span className="font-mono text-[9px] text-white/30 bg-white/[0.03] px-2 py-0.5 rounded-md italic">
+                              Not submitted yet
+                            </span>
+                          )}
+                        </div>
+
                         {link ? (
-                          <a href={link} target="_blank" rel="noopener noreferrer" 
-                            className="text-white text-xs hover:text-blue-300 transition-colors break-all underline decoration-white/20 underline-offset-4 truncate">
-                            {link}
-                          </a>
-                        ) : (
-                          <span className="text-white/20 text-xs italic">Not submitted</span>
-                        )}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1">
+                            <a href={link} target="_blank" rel="noopener noreferrer" 
+                              className="text-white text-xs hover:text-blue-300 transition-colors break-all underline decoration-white/20 underline-offset-4 truncate font-mono">
+                              🔗 {link}
+                            </a>
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })}

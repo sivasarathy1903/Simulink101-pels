@@ -171,40 +171,50 @@ export const teamService = {
   },
 
   async getTeamSubmissions(teamId: string): Promise<Record<string, { link: string; submittedAt?: string }>> {
-    const { data, error } = await supabase
+    const submissionsMap: Record<string, { link: string; submittedAt?: string }> = {};
+
+    // 1. Fetch from submissions table
+    const { data: subData, error: subErr } = await supabase
       .from("submissions")
       .select("task_key, drive_link, updated_at, created_at")
       .eq("team_id", teamId);
       
-    if (error) {
-      console.error("Error fetching submissions:", error);
+    if (!subErr && subData) {
+      subData.forEach(row => {
+        const timeVal = row.updated_at || row.created_at;
+        const subObj = { link: row.drive_link, submittedAt: timeVal };
+        submissionsMap[row.task_key] = subObj;
+
+        const num = row.task_key.includes("1") ? 1 : row.task_key.includes("2") ? 2 : row.task_key.includes("3") ? 3 : 0;
+        if (num > 0) {
+          submissionsMap[`task${num}Link`] = subObj;
+          submissionsMap[`task${num}`] = subObj;
+          submissionsMap[`t${num}`] = subObj;
+        }
+      });
     }
 
-    const submissionsMap: Record<string, { link: string; submittedAt?: string }> = {};
-    
-    // First fill from DB submissions table
-    data?.forEach(row => {
-      submissionsMap[row.task_key] = {
-        link: row.drive_link,
-        submittedAt: row.updated_at || row.created_at,
-      };
-    });
-
-    // Fallback: check team row metrics
+    // 2. Fetch from team metrics row for backup
     const { data: teamData } = await supabase
       .from("teams")
-      .select("metrics")
+      .select("metrics, last_updated")
       .eq("id", teamId)
       .single();
 
     if (teamData?.metrics) {
       const m = teamData.metrics;
-      ["task1Link", "task2Link", "task3Link"].forEach(k => {
-        if (m[k] && typeof m[k] === "string" && !submissionsMap[k]) {
-          submissionsMap[k] = {
-            link: m[k] as string,
-            submittedAt: (m[`${k}_submittedAt`] as string) || undefined,
-          };
+      [1, 2, 3].forEach(num => {
+        const keys = [`task${num}Link`, `task${num}`, `t${num}`, `t${num}_link`, ...(num === 1 ? ["driveLink"] : [])];
+        for (const k of keys) {
+          if (m[k] && typeof m[k] === "string" && (m[k] as string).trim()) {
+            const linkVal = (m[k] as string).trim();
+            const timeVal = (m[`${k}_submittedAt`] as string) || (m[`task${num}Link_submittedAt`] as string) || (m[`task${num}_submittedAt`] as string) || (m[`t${num}_submittedAt`] as string) || teamData.last_updated;
+            const subObj = { link: linkVal, submittedAt: timeVal };
+            submissionsMap[`task${num}Link`] = subObj;
+            submissionsMap[`task${num}`] = subObj;
+            submissionsMap[`t${num}`] = subObj;
+            break;
+          }
         }
       });
     }
@@ -214,6 +224,7 @@ export const teamService = {
 
   async updateTeamSubmission(teamId: string, taskKey: string, driveLink: string): Promise<void> {
     const nowIso = new Date().toISOString();
+    const taskNum = taskKey.includes("1") ? 1 : taskKey.includes("2") ? 2 : taskKey.includes("3") ? 3 : 1;
 
     // 1. Save to submissions table
     const { error: subErr } = await supabase
@@ -229,7 +240,7 @@ export const teamService = {
       console.warn("Submissions table write note:", subErr.message);
     }
 
-    // 2. Also update team metrics as backup timestamp store
+    // 2. Also update team metrics in teams table (saves all alias keys!)
     const { data: teamRow } = await supabase
       .from("teams")
       .select("metrics")
@@ -240,12 +251,25 @@ export const teamService = {
       const updatedMetrics = {
         ...(teamRow.metrics || {}),
         [taskKey]: driveLink,
+        [`task${taskNum}Link`]: driveLink,
+        [`task${taskNum}`]: driveLink,
+        [`t${taskNum}`]: driveLink,
+        [`t${taskNum}_link`]: driveLink,
+        ...(taskNum === 1 ? { driveLink: driveLink } : {}),
         [`${taskKey}_submittedAt`]: nowIso,
+        [`task${taskNum}Link_submittedAt`]: nowIso,
+        [`task${taskNum}_submittedAt`]: nowIso,
+        [`t${taskNum}_submittedAt`]: nowIso,
       };
-      await supabase
+
+      const { error: teamErr } = await supabase
         .from("teams")
         .update({ metrics: updatedMetrics, last_updated: "Just now" })
         .eq("id", teamId);
+
+      if (teamErr) {
+        console.error("Error updating team metrics submission:", teamErr.message);
+      }
     }
   }
 };

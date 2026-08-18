@@ -200,9 +200,21 @@ export default function TeamTelemetryDetails({ team, onBack, onUpdateMetrics, is
                 </h3>
                 <div className="space-y-3">
                   {[1, 2, 3].map(num => {
-                    const subInfo = submissions[`task${num}Link`];
-                    const link = subInfo?.link || (team.metrics[`task${num}Link`] as string);
-                    const timestampStr = subInfo?.submittedAt || (team.metrics[`task${num}Link_submittedAt`] as string) || (team.metrics[`task${num}_submittedAt`] as string);
+                    const subInfo = submissions[`task${num}Link`] || submissions[`task${num}`] || submissions[`t${num}`];
+                    
+                    const link = subInfo?.link 
+                      || (team.metrics[`task${num}Link`] as string) 
+                      || (team.metrics[`task${num}`] as string) 
+                      || (team.metrics[`t${num}`] as string) 
+                      || (team.metrics[`t${num}_link`] as string) 
+                      || (num === 1 ? (team.metrics[`driveLink`] as string) : undefined);
+
+                    const timestampStr = subInfo?.submittedAt 
+                      || (team.metrics[`task${num}Link_submittedAt`] as string) 
+                      || (team.metrics[`task${num}_submittedAt`] as string) 
+                      || (team.metrics[`t${num}_submittedAt`] as string)
+                      || (link ? team.lastUpdated : undefined);
+
                     const formattedTime = formatSubmissionTime(timestampStr);
 
                     return (

@@ -396,7 +396,24 @@ export default function App() {
                   const t = teams.find(t => t.id === currentUser.teamId);
                   if (t) {
                     await teamService.updateTeamSubmission(t.id, linkKey, linkVal);
-                    setSubmittedLinks(prev => ({ ...prev, [linkKey]: linkVal }));
+                    const nowIso = new Date().toISOString();
+                    setSubmittedLinks(prev => ({
+                      ...prev,
+                      [linkKey]: linkVal,
+                      [`${linkKey}_submittedAt`]: nowIso,
+                    }));
+                    
+                    // Instantly reflect in local team object
+                    const num = linkKey.includes("1") ? 1 : linkKey.includes("2") ? 2 : 3;
+                    t.metrics = {
+                      ...(t.metrics || {}),
+                      [linkKey]: linkVal,
+                      [`task${num}Link`]: linkVal,
+                      [`task${num}`]: linkVal,
+                      [`t${num}`]: linkVal,
+                      [`${linkKey}_submittedAt`]: nowIso,
+                      [`task${num}Link_submittedAt`]: nowIso,
+                    };
                   }
                 }}
                 onToggleRelease={async (num, rel) => {

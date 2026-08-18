@@ -399,6 +399,9 @@ export default function App() {
                     setSubmittedLinks(prev => ({ ...prev, [linkKey]: linkVal }));
                   }
                 }}
+                onToggleRelease={async (num, rel) => {
+                  await handleUpdateConfig({ [`task${num}Released`]: rel });
+                }}
                 onNavigateRulebook={() => { setActiveTaskNumber(null); setCurrentTab("rulebook"); }}
                 onNavigateResources={() => { setActiveTaskNumber(null); setCurrentTab("resources"); }}
               />

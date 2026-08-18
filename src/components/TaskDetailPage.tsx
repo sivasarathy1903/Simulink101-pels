@@ -83,6 +83,7 @@ interface TaskDetailPageProps {
   teams: Team[];
   submittedLinks: Record<string, string>;
   onSaveSubmission: (taskKey: string, link: string) => Promise<void>;
+  onToggleRelease?: (taskNumber: number, isReleased: boolean) => Promise<void>;
   onNavigateRulebook?: () => void;
   onNavigateResources?: () => void;
 }
@@ -94,6 +95,7 @@ export default function TaskDetailPage({
   teams,
   submittedLinks,
   onSaveSubmission,
+  onToggleRelease,
   onNavigateRulebook,
   onNavigateResources,
 }: TaskDetailPageProps) {
@@ -107,6 +109,7 @@ export default function TaskDetailPage({
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isTogglingRelease, setIsTogglingRelease] = useState(false);
 
   const existingSubmission = submittedLinks[task.linkKey];
 
@@ -126,8 +129,104 @@ export default function TaskDetailPage({
     }
   };
 
+  const handleToggleReleaseClick = async () => {
+    if (!onToggleRelease) return;
+    setIsTogglingRelease(true);
+    try {
+      await onToggleRelease(taskNumber, !isReleased);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsTogglingRelease(false);
+    }
+  };
+
+  // ── FROZEN VIEW FOR NON-ADMIN PARTICIPANTS / VIEWERS ──
+  if (!isReleased && currentUser.role !== "admin") {
+    return (
+      <div className="w-full max-w-4xl mx-auto py-12 sm:py-16 px-4 sm:px-8 mt-14 font-sans text-white text-center">
+        <button onClick={onBack}
+          className="flex items-center gap-2 font-mono text-xs text-white/50 hover:text-primary-red transition-colors border border-white/[0.08] hover:border-primary-red/30 bg-white/[0.02] px-4 py-2 rounded-lg mb-8 cursor-pointer mx-auto sm:mx-0">
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to Challenges
+        </button>
+
+        <div className="relative rounded-3xl p-8 sm:p-12 border border-yellow-500/30 bg-gradient-to-br from-yellow-500/[0.06] via-black/60 to-transparent shadow-2xl backdrop-blur-xl overflow-hidden">
+          {/* Animated Lock Badge */}
+          <div className="h-20 w-20 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400 mx-auto mb-6 shadow-xl shadow-yellow-500/10">
+            <Lock className="h-10 w-10 animate-pulse" />
+          </div>
+
+          <span className="font-mono text-xs font-bold text-yellow-400 tracking-widest uppercase bg-yellow-500/10 border border-yellow-500/25 px-3.5 py-1.5 rounded-full mb-4 inline-block">
+            TASK {taskNumber} IS CURRENTLY FROZEN / LOCKED
+          </span>
+
+          <h2 className="font-display font-black text-3xl sm:text-4xl text-white mb-3">
+            {task.product}
+          </h2>
+
+          <p className="font-mono text-xs sm:text-sm text-white/50 max-w-md mx-auto leading-relaxed mb-8">
+            This task has been temporarily locked by the SIMVERSE Phase 2 coordinators. Specifications and submission access will unlock when released.
+          </p>
+
+          <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 max-w-md mx-auto mb-8 font-mono text-xs text-left space-y-2">
+            <div className="flex justify-between text-white/60">
+              <span>Task Status:</span>
+              <span className="text-yellow-400 font-bold">🧊 Frozen by Admin</span>
+            </div>
+            <div className="flex justify-between text-white/60">
+              <span>Required Software:</span>
+              <span className="text-white">MATLAB R2026a</span>
+            </div>
+            <div className="flex justify-between text-white/60">
+              <span>Evaluation Max:</span>
+              <span className="text-primary-red font-bold">100 Marks</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-4">
+            {onNavigateRulebook && (
+              <button onClick={onNavigateRulebook} className="btn-primary-gradient font-mono text-xs font-bold text-white px-6 py-3 rounded-xl flex items-center gap-2 cursor-pointer shadow-lg shadow-primary-red/20">
+                <FileText className="h-4 w-4" /> VIEW OFFICIAL RULEBOOK
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto py-8 sm:py-12 px-3 sm:px-6 md:px-8 mt-14 font-sans text-white">
+
+      {/* Admin Freeze / Release Status Banner */}
+      {currentUser.role === "admin" && (
+        <div className="bg-primary-red/[0.08] border border-primary-red/25 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono text-xs">
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-primary-red uppercase tracking-widest">Admin Task Control:</span>
+            {isReleased ? (
+              <span className="bg-green-500/10 border border-green-500/30 text-green-400 font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" /> RELEASED / ACTIVE
+              </span>
+            ) : (
+              <span className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+                🧊 FROZEN / LOCKED FOR PARTICIPANTS
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={handleToggleReleaseClick}
+            disabled={isTogglingRelease}
+            className={`font-mono text-xs font-bold px-5 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+              isReleased
+                ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 hover:bg-yellow-500/30"
+                : "btn-primary-gradient text-white shadow-lg shadow-primary-red/20"
+            }`}
+          >
+            {isTogglingRelease ? "Updating Status…" : isReleased ? "FREEZE TASK 🧊" : "RELEASE / UNLOCK TASK 🔓"}
+          </button>
+        </div>
+      )}
 
       {/* Top Navigation Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-8 pb-4 border-b border-white/[0.08]">

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft, Cpu, ShieldCheck, Trophy, Sparkles, Lock, ExternalLink, CheckCircle2, FileText, Zap, Layers, AlertCircle, Clock } from "lucide-react";
 import { motion } from "motion/react";
 import { Team, TaskInfo } from "../types";

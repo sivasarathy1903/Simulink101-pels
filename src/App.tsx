@@ -101,7 +101,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Particle canvas animation
+  // Continuous Global Particle & Waveform Canvas Animation
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -110,30 +110,33 @@ export default function App() {
 
     let animId: number;
     const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
     resize();
     window.addEventListener("resize", resize);
 
-    // Particles
-    const particles: { x: number; y: number; vx: number; vy: number; r: number; alpha: number }[] = [];
-    for (let i = 0; i < 80; i++) {
+    // Particles with position, velocity, radius, and theme alpha
+    const particleCount = Math.min(Math.floor(window.innerWidth / 15), 90);
+    const particles: { x: number; y: number; vx: number; vy: number; r: number; alpha: number; color: string }[] = [];
+    
+    for (let i = 0; i < particleCount; i++) {
       particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        r: Math.random() * 1.5 + 0.3,
-        alpha: Math.random() * 0.5 + 0.1,
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        r: Math.random() * 1.8 + 0.4,
+        alpha: Math.random() * 0.45 + 0.15,
+        color: Math.random() > 0.3 ? "227,30,36" : "255,255,255",
       });
     }
 
     // Grid lines
     const drawGrid = () => {
-      ctx.strokeStyle = "rgba(255,255,255,0.025)";
+      ctx.strokeStyle = "rgba(255,255,255,0.02)";
       ctx.lineWidth = 1;
-      const size = 60;
+      const size = 70;
       for (let x = 0; x < canvas.width; x += size) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
       }
@@ -142,14 +145,15 @@ export default function App() {
       }
     };
 
-    // Flowing signal lines
+    // Flowing signal sine waves (representing power electronics AC/DC signals)
     let t = 0;
-    const drawSignal = (yBase: number, color: string, speed: number, amp: number) => {
+    const drawSignal = (yBaseRatio: number, color: string, speed: number, amp: number, freq: number) => {
       ctx.beginPath();
       ctx.strokeStyle = color;
       ctx.lineWidth = 1.5;
-      for (let x = 0; x <= canvas.width; x += 3) {
-        const y = yBase + Math.sin((x / 180) + t * speed) * amp;
+      const yBase = canvas.height * yBaseRatio;
+      for (let x = 0; x <= canvas.width; x += 4) {
+        const y = yBase + Math.sin((x / freq) + t * speed) * amp;
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.stroke();
@@ -159,29 +163,53 @@ export default function App() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawGrid();
 
-      // Glowing orb
-      const grd = ctx.createRadialGradient(canvas.width * 0.25, canvas.height * 0.35, 0, canvas.width * 0.25, canvas.height * 0.35, 380);
-      grd.addColorStop(0, "rgba(227,30,36,0.06)");
-      grd.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = grd;
+      // Ambient glowing radial orbs
+      const grd1 = ctx.createRadialGradient(canvas.width * 0.2, canvas.height * 0.25, 0, canvas.width * 0.2, canvas.height * 0.25, 450);
+      grd1.addColorStop(0, "rgba(227,30,36,0.07)");
+      grd1.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grd1;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const grd2 = ctx.createRadialGradient(canvas.width * 0.8, canvas.height * 0.75, 0, canvas.width * 0.8, canvas.height * 0.75, 400);
+      grd2.addColorStop(0, "rgba(227,30,36,0.05)");
+      grd2.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grd2;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Signal waves
-      drawSignal(canvas.height * 0.3, "rgba(227,30,36,0.25)", 0.6, 30);
-      drawSignal(canvas.height * 0.55, "rgba(255,255,255,0.08)", 0.4, 20);
-      drawSignal(canvas.height * 0.75, "rgba(227,30,36,0.12)", 0.5, 15);
+      drawSignal(0.25, "rgba(227,30,36,0.22)", 0.6, 28, 160);
+      drawSignal(0.50, "rgba(255,255,255,0.07)", 0.4, 18, 140);
+      drawSignal(0.78, "rgba(227,30,36,0.15)", 0.5, 22, 180);
 
-      // Particles
-      particles.forEach(p => {
-        p.x += p.vx; p.y += p.vy;
+      // Update & render particles
+      particles.forEach((p, idx) => {
+        p.x += p.vx;
+        p.y += p.vy;
         if (p.x < 0) p.x = canvas.width;
         if (p.x > canvas.width) p.x = 0;
         if (p.y < 0) p.y = canvas.height;
         if (p.y > canvas.height) p.y = 0;
+
+        // Render particle dot
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(227,30,36,${p.alpha})`;
+        ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
         ctx.fill();
+
+        // Draw particle constellation mesh lines
+        for (let j = idx + 1; j < particles.length; j++) {
+          const dx = p.x - particles[j].x;
+          const dy = p.y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(227,30,36,${0.12 * (1 - dist / 100)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
       });
 
       t += 0.012;
@@ -309,14 +337,18 @@ export default function App() {
   ];
 
   return (
-    <div className="bg-[#070709] text-white min-h-screen selection:bg-primary-red selection:text-white flex flex-col overflow-x-hidden">
+    <div className="bg-[#070709] text-white min-h-screen selection:bg-primary-red selection:text-white flex flex-col overflow-x-hidden relative">
+
+      {/* ─── GLOBAL CONTINUOUS BACKGROUND ANIMATION (Never stops on navigation) ─── */}
+      <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-0" />
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#070709_85%)] pointer-events-none z-0" />
 
       {/* ─── NAV ─── */}
       <nav className="fixed top-0 w-full z-50 bg-[#070709]/85 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
         <div className="flex justify-between items-center px-4 sm:px-6 md:px-12 py-3 max-w-[1440px] mx-auto">
           {/* Logo & Brand */}
           <div onClick={() => { setCurrentTab("home"); setSelectedTeam(null); setActiveTaskNumber(null); setIsMobileMenuOpen(false); }} className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer group shrink-0">
-            <img alt="IEEE PELS" className="h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-white/10 group-hover:border-primary-red/40 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhT7QIUE14McBjVbaSVgLbQU9Rskq807b4yTeIq433ZYqnXk0jH5wCkIHv7aFintnvmMEPMB8U6dzNDoCltxJIlTa1QfcbTFv-BMzBuvE-m-GH5LG8dcz-njxhfytuRde4mq-BPrltR_gDGpVQ7dZuCNEtLZy3K7ttEPoq6_sas0yedeCB344eHCiEQx9EOWuuiE-CXTRnBmGJqnhwcoFV2fUFiWM_YObS8Q1g-wvE74BsUdQU2Ic2Xg-kKlB3ZqJj3uA" />
+            <img alt="IEEE PELS" className="h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-white/10 group-hover:border-primary-red/40 transition-all object-cover" src="/pels_logo.jpg" />
             <div>
               <div className="font-display font-black text-sm sm:text-base text-white leading-none tracking-widest group-hover:text-primary-red transition-colors">SIMVERSE</div>
               <div className="font-mono text-[7px] sm:text-[8px] text-white/35 tracking-wider sm:tracking-widest">IEEE POWER ELECTRONICS</div>
@@ -570,13 +602,7 @@ export default function App() {
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}>
 
               {/* ─── HERO ─── */}
-              <section className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden">
-
-                {/* Canvas background */}
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
-
-                {/* Vignette overlay */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#070709_80%)] pointer-events-none z-[1]" />
+              <section className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden z-10">
 
                 {/* Center content */}
                 <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-5xl">
@@ -599,8 +625,8 @@ export default function App() {
                       <div className="absolute inset-0 rounded-full bg-primary-red/20 blur-2xl scale-150 animate-pulse" />
                       <img
                         alt="IEEE PELS Logo"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWFhypqX49CLE1dA5h3Oo_p3Npdqs-zfB5A4aibOI5YUyN8LXhfqByUJrbE1xMNSFe3OI32os9ob8caLvQw8Z6DUhISk5_OZONeWi6w0dBmrsPu-5ljDhj3-YmMjT6QejkL6RMH4BV7ihr0d2_cUae1BKjVz1LX3i6ncb-mBoZBzBGFkocvzdJobfcDsdL2DFCQ2o54PskiTpKDIwdjMfm2JbpKiVDyESbWX6H92vW3nu4vuBoVdG3gi0MhS2zksFiIJA"
-                        className="relative h-20 w-20 sm:h-28 sm:w-28 rounded-full border border-white/15 shadow-2xl shadow-primary-red/20 object-contain p-1"
+                        src="/pels_logo.jpg"
+                        className="relative h-20 w-20 sm:h-28 sm:w-28 rounded-full border border-white/15 shadow-2xl shadow-primary-red/20 object-cover"
                       />
                     </div>
                   </motion.div>

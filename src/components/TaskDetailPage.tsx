@@ -9,19 +9,39 @@ export const TASK_CONFIGS: Record<number, TaskInfo> = {
     id: "task-1",
     key: 1,
     title: "Task 1",
-    product: "Soft Robotic Rehabilitation Glove",
+    product: "Disposable Wearable ECG Patch",
+    description: "A medical device company is developing a disposable wearable ECG patch for continuous heart monitoring. The patch must operate from a single-cell battery and provide a clean, regulated supply to the analog front-end and microcontroller. Because the product is intended for high-volume disposable use, the power stage must be extremely compact, low-cost, and simple, while still delivering reliable performance.",
     givenSpecs: {
-      input: "1.2 – 1.5 V Battery",
-      output: "3.3 V or 5 V",
-      power: "9 W Continuous",
-      priority: "High efficiency, low heat, and compact size",
+      input: "1.2 V",
+      output: "3.3 V",
+      power: "0.2 W",
+      priority: "Lowest component count, low cost, high reliability",
+      freq: "500 kHz",
+      rippleIL: "0.05 A",
+      rippleVo: "0.1 V",
+      minEff: "80%",
     },
+    designParameters: [
+      { label: "Input Voltage available", value: "1.2 V" },
+      { label: "Target Output Voltage", value: "3.3 V" },
+      { label: "Output Power to be delivered", value: "0.2 W" },
+      { label: "Switching Frequency", value: "500 kHz" },
+      { label: "Inductor Current Ripple (ΔIL)", value: "0.05 A" },
+      { label: "Output Voltage Ripple (ΔVo)", value: "0.1 V" },
+      { label: "Expected Minimum Efficiency", value: "80%" },
+    ],
+    keyPriorities: [
+      "Lowest component count and smallest form factor",
+      "Low cost",
+      "High reliability through circuit simplicity",
+      "Suitable for high-volume disposable medical wearables",
+    ],
     topologyOptions: [
       { name: "Conventional Boost Converter" },
       { name: "Synchronous Boost Converter" },
       { name: "2-Phase Interleaved Boost Converter" },
     ],
-    taskStatement: "Choose the most suitable topology for the product. Justify your choice with clear technical reasoning, design and simulate the converter, and demonstrate that it can provide the required voltage and 9 W power with acceptable efficiency, output performance, and heat management.",
+    taskStatement: "Select the most suitable topology for this application. Justify your choice with clear technical reasoning, design the converter using the given parameters, and simulate it to demonstrate stable 3.3 V output at 0.2 W with acceptable performance.",
     released: true,
     linkKey: "task1Link",
   },
@@ -29,19 +49,37 @@ export const TASK_CONFIGS: Record<number, TaskInfo> = {
     id: "task-2",
     key: 2,
     title: "Task 2",
-    product: "Power Stage for a Compact Drone Camera Gimbal",
+    product: "High-Power Supply for Portable Software-Defined Radio",
+    description: "A defence electronics company is developing a compact DC-DC module for a portable software-defined radio (SDR) and RF power amplifier system. The radio can be powered from different sources, so the input voltage varies significantly. The power stage must deliver a stable 24 V output when the input is as low as 12 V and as high as 36 V.",
     givenSpecs: {
-      input: "3.0 – 8.4 V",
-      output: "5 V, 3 A",
-      power: "15 W",
-      priority: "Stable output for both step-up and step-down operation",
+      input: "12 V & 36 V",
+      output: "24 V",
+      power: "50 W",
+      priority: "Stable non-inverting 24V output, step-up & step-down, single-inductor preference",
+      freq: "100 kHz",
+      rippleIL: "0.5 A",
+      rippleVo: "0.1 V",
     },
+    designParameters: [
+      { label: "Input Voltage available", value: "12 V & 36 V" },
+      { label: "Target Output Voltage", value: "24 V" },
+      { label: "Output Power to be delivered", value: "50 W" },
+      { label: "Switching Frequency", value: "100 kHz" },
+      { label: "Inductor Current Ripple (ΔIL)", value: "0.5 A" },
+      { label: "Output Voltage Ripple (ΔVo)", value: "0.1 V" },
+    ],
+    keyPriorities: [
+      "Stable non-inverting 24 V output for both 12 V and 36 V input",
+      "Ability to operate in both step-up and step-down modes",
+      "Compact size",
+      "Prefer single-inductor topology where possible",
+    ],
     topologyOptions: [
       { name: "SEPIC Converter" },
       { name: "Conventional Buck-Boost Converter" },
       { name: "Non-Inverting Buck-Boost Converter" },
     ],
-    taskStatement: "Choose the most suitable topology for the product. Justify your choice with clear technical reasoning, design and simulate the converter, and demonstrate that it can provide a stable 5 V, 3 A output across the full 3.0–8.4 V input range with good efficiency and acceptable performance.",
+    taskStatement: "Select the most suitable topology for this application. Justify your choice with clear technical reasoning, design the converter using the given parameters, and simulate it to demonstrate that the output remains stable at 24 V for both 12 V and 36 V input.",
     released: true,
     linkKey: "task2Link",
   },
@@ -49,19 +87,37 @@ export const TASK_CONFIGS: Record<number, TaskInfo> = {
     id: "task-3",
     key: 3,
     title: "Task 3",
-    product: "Auxiliary Power Module for an Electric Two-Wheeler",
+    product: "Electric Two-Wheeler Auxiliary Power Module",
+    description: "An electric two-wheeler manufacturer is developing a high-power auxiliary power module that converts the main battery voltage into a stable low-voltage supply for the vehicle’s lighting, control unit, and onboard electronics. The module must deliver high current with low ripple and good thermal performance in a compact form.",
     givenSpecs: {
-      input: "42 – 54 V Battery",
-      output: "12 V, 15 A Continuous",
-      power: "180 W",
-      priority: "High efficiency, low heat, and compact size",
+      input: "48 V",
+      output: "12 V",
+      power: "100 W",
+      priority: "Low voltage ripple, low current ripple, thermal distribution, high efficiency",
+      freq: "50 kHz",
+      rippleIL: "1.5 A (per phase)",
+      rippleVo: "0.08 V",
     },
+    designParameters: [
+      { label: "Input Voltage", value: "48 V" },
+      { label: "Target Output Voltage", value: "12 V" },
+      { label: "Output Power to be delivered", value: "100 W" },
+      { label: "Switching Frequency", value: "50 kHz" },
+      { label: "Inductor Current Ripple (per phase) ΔIL", value: "1.5 A" },
+      { label: "Output Voltage Ripple (ΔVo)", value: "0.08 V" },
+    ],
+    keyPriorities: [
+      "Low output voltage ripple",
+      "Low input current ripple",
+      "Better thermal distribution",
+      "High efficiency and compact filter size",
+    ],
     topologyOptions: [
       { name: "Conventional Buck Converter" },
       { name: "Synchronous Buck Converter" },
-      { name: "2-Phase Interleaved Buck Converter" },
+      { name: "2-Phase Buck Converter" },
     ],
-    taskStatement: "Choose the most suitable topology for the product. Justify your choice with clear technical reasoning, design and simulate the converter, and demonstrate that it can provide a stable 12 V, 15 A output with good efficiency, low losses, and acceptable performance.",
+    taskStatement: "Select the most suitable topology for this application. Justify your choice with clear technical reasoning, design the converter using the given parameters, and simulate it to demonstrate stable 12 V output at 100 W with acceptable performance.",
     released: true,
     linkKey: "task3Link",
   },
@@ -249,7 +305,7 @@ export default function TaskDetailPage({
         </div>
       </div>
 
-      {/* Task Header */}
+      {/* Task Header Hero */}
       <div className="relative rounded-2xl p-6 sm:p-10 border border-primary-red/30 bg-gradient-to-br from-primary-red/[0.08] via-black/40 to-transparent overflow-hidden mb-10 shadow-2xl">
         <span className="absolute -right-4 -bottom-6 font-display font-black text-[140px] sm:text-[180px] text-primary-red/[0.04] leading-none select-none pointer-events-none">{task.key}</span>
         
@@ -279,7 +335,14 @@ export default function TaskDetailPage({
           </div>
         </div>
 
-        {/* Given Specifications Grid */}
+        {/* Product Application Narrative Box */}
+        {task.description && (
+          <p className="font-sans text-xs sm:text-sm text-white/70 leading-relaxed mb-6 bg-white/[0.02] border border-white/[0.06] p-4 rounded-xl">
+            {task.description}
+          </p>
+        )}
+
+        {/* Given Specifications Summary Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 pt-6 border-t border-white/10">
           <div className="bg-black/40 border border-white/[0.08] rounded-xl p-3.5">
             <span className="font-mono text-[9px] text-white/40 uppercase tracking-widest block mb-1">Input Voltage</span>
@@ -301,16 +364,52 @@ export default function TaskDetailPage({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-        {/* Left 2 Cols: Task Statement & Topology Options */}
+        {/* Left 2 Cols: Task Parameters, Priorities, Task Statement & Topologies */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* Task Statement */}
+          {/* Detailed Design Parameters Grid */}
+          {task.designParameters && task.designParameters.length > 0 && (
+            <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-white/[0.08]">
+              <div className="flex items-center gap-2.5 mb-6">
+                <Zap className="h-5 w-5 text-yellow-400" />
+                <h2 className="font-mono text-base font-bold text-white uppercase tracking-widest">Design Parameters</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
+                {task.designParameters.map((param, idx) => (
+                  <div key={idx} className="bg-white/[0.02] border border-white/[0.06] p-3.5 rounded-xl flex items-center justify-between">
+                    <span className="text-white/60 text-[11px]">{param.label}</span>
+                    <span className="font-bold text-white text-xs bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.08] text-primary-red">{param.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Key Priorities Checklist */}
+          {task.keyPriorities && task.keyPriorities.length > 0 && (
+            <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-white/[0.08]">
+              <div className="flex items-center gap-2.5 mb-4">
+                <ShieldCheck className="h-5 w-5 text-primary-red" />
+                <h2 className="font-mono text-base font-bold text-white uppercase tracking-widest">Key Priorities</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-mono text-xs">
+                {task.keyPriorities.map((priority, idx) => (
+                  <div key={idx} className="flex items-center gap-2.5 bg-white/[0.02] border border-white/[0.05] p-3 rounded-xl">
+                    <CheckCircle2 className="h-4 w-4 text-primary-red shrink-0" />
+                    <span className="text-white/80">{priority}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Task Requirements & Prompt */}
           <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-white/[0.08]">
             <div className="flex items-center gap-2.5 mb-4">
               <Cpu className="h-5 w-5 text-primary-red" />
-              <h2 className="font-mono text-base font-bold text-white uppercase tracking-widest">Task Requirements</h2>
+              <h2 className="font-mono text-base font-bold text-white uppercase tracking-widest">Your Task Statement</h2>
             </div>
-            <p className="text-sm sm:text-base text-white/80 leading-relaxed font-sans bg-white/[0.02] border border-white/[0.05] p-5 rounded-xl">
+            <p className="text-sm sm:text-base text-white/90 leading-relaxed font-sans bg-white/[0.02] border border-white/[0.05] p-5 rounded-xl">
               {task.taskStatement}
             </p>
           </div>

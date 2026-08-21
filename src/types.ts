@@ -69,15 +69,22 @@ export interface TaskInfo {
   key: number;
   title: string;
   product: string;
+  description?: string;
   givenSpecs: {
     input: string;
     output: string;
     power: string;
     priority: string;
+    freq?: string;
+    rippleIL?: string;
+    rippleVo?: string;
+    minEff?: string;
   };
+  designParameters?: { label: string; value: string }[];
+  keyPriorities?: string[];
   topologyOptions: {
     name: string;
-    desc: string;
+    desc?: string;
     recommended?: boolean;
   }[];
   taskStatement: string;

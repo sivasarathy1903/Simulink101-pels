@@ -17,9 +17,9 @@ export const TASK_CONFIGS: Record<number, TaskInfo> = {
       priority: "High efficiency, low heat, and compact size",
     },
     topologyOptions: [
-      { name: "Conventional Boost Converter", desc: "Basic step-up converter with single diode and switch. Higher switching diode conduction losses." },
-      { name: "Synchronous Boost Converter", desc: "Replaces diode with active MOSFET to drastically improve efficiency and lower heat dissipation.", recommended: true },
-      { name: "2-Phase Interleaved Boost Converter", desc: "Parallels two phases out of phase to reduce input ripple current and thermal stress." },
+      { name: "Conventional Boost Converter" },
+      { name: "Synchronous Boost Converter" },
+      { name: "2-Phase Interleaved Boost Converter" },
     ],
     taskStatement: "Choose the most suitable topology for the product. Justify your choice with clear technical reasoning, design and simulate the converter, and demonstrate that it can provide the required voltage and 9 W power with acceptable efficiency, output performance, and heat management.",
     released: true,
@@ -37,9 +37,9 @@ export const TASK_CONFIGS: Record<number, TaskInfo> = {
       priority: "Stable output for both step-up and step-down operation",
     },
     topologyOptions: [
-      { name: "SEPIC Converter", desc: "Non-inverting buck-boost operation with continuous input current and AC coupling capacitor." },
-      { name: "Conventional Buck-Boost Converter", desc: "Simple inverting step-up/step-down topology. Produces negative output polarity." },
-      { name: "Non-Inverting Buck-Boost Converter", desc: "4-switch configuration providing positive output voltage across full Li-ion range.", recommended: true },
+      { name: "SEPIC Converter" },
+      { name: "Conventional Buck-Boost Converter" },
+      { name: "Non-Inverting Buck-Boost Converter" },
     ],
     taskStatement: "Choose the most suitable topology for the product. Justify your choice with clear technical reasoning, design and simulate the converter, and demonstrate that it can provide a stable 5 V, 3 A output across the full 3.0–8.4 V input range with good efficiency and acceptable performance.",
     released: true,
@@ -57,9 +57,9 @@ export const TASK_CONFIGS: Record<number, TaskInfo> = {
       priority: "High efficiency, low heat, and compact size",
     },
     topologyOptions: [
-      { name: "Conventional Buck Converter", desc: "Standard step-down converter with freewheeling diode." },
-      { name: "Synchronous Buck Converter", desc: "Replaces freewheeling diode with active MOSFET to reduce conduction loss at 15A." },
-      { name: "2-Phase Interleaved Buck Converter", desc: "Splits 15A current across two phases, significantly reducing inductor size and heat density.", recommended: true },
+      { name: "Conventional Buck Converter" },
+      { name: "Synchronous Buck Converter" },
+      { name: "2-Phase Interleaved Buck Converter" },
     ],
     taskStatement: "Choose the most suitable topology for the product. Justify your choice with clear technical reasoning, design and simulate the converter, and demonstrate that it can provide a stable 12 V, 15 A output with good efficiency, low losses, and acceptable performance.",
     released: true,
@@ -321,18 +321,10 @@ export default function TaskDetailPage({
               <Layers className="h-5 w-5 text-primary-red" />
               <h2 className="font-mono text-base font-bold text-white uppercase tracking-widest">Candidate Topology Options</h2>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {task.topologyOptions.map((opt, i) => (
-                <div key={i} className={`p-4 sm:p-5 rounded-xl border transition-all ${opt.recommended ? 'border-primary-red/40 bg-primary-red/[0.04]' : 'border-white/[0.08] bg-white/[0.02]'}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-display font-bold text-base text-white">{opt.name}</h3>
-                    {opt.recommended && (
-                      <span className="font-mono text-[9px] bg-primary-red text-white font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                        High Efficiency
-                      </span>
-                    )}
-                  </div>
-                  <p className="font-mono text-xs text-white/60 leading-relaxed">{opt.desc}</p>
+                <div key={i} className="p-4 sm:p-5 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:border-white/20 transition-all flex items-center justify-between">
+                  <h3 className="font-display font-bold text-base text-white">{opt.name}</h3>
                 </div>
               ))}
             </div>

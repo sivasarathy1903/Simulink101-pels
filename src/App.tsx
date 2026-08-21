@@ -605,28 +605,52 @@ export default function App() {
                     </div>
                   </motion.div>
 
-                  {/* SIMVERSE — professional staggered reveal */}
-                  <div className="flex justify-center items-end gap-0 mb-4 sm:mb-6 overflow-visible max-w-full" aria-label="SIMVERSE">
-                    {"SIMVERSE".split("").map((ch, i) => (
-                      <motion.span
-                        key={i}
-                        className="font-display font-black leading-none select-none"
-                        style={{
-                          fontSize: "clamp(32px, 11vw, 128px)",
-                          letterSpacing: "-0.02em",
-                          background: "linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0.55) 100%)",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          backgroundClip: "text",
-                          filter: "drop-shadow(0 0 28px rgba(227,30,36,0.35))",
-                        }}
-                        initial={{ opacity: 0, y: 40, skewX: -6 }}
-                        animate={{ opacity: 1, y: 0, skewX: 0 }}
-                        transition={{ delay: 0.15 + i * 0.06, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                      >
-                        {ch}
-                      </motion.span>
-                    ))}
+                  {/* SIMVERSE PHASE 2 — professional staggered reveal */}
+                  <div className="flex flex-wrap justify-center items-center gap-x-3 sm:gap-x-5 mb-4 sm:mb-6 overflow-visible max-w-full" aria-label="SIMVERSE PHASE 2">
+                    <div className="flex justify-center items-center">
+                      {"SIMVERSE".split("").map((ch, i) => (
+                        <motion.span
+                          key={i}
+                          className="font-display font-black leading-none select-none"
+                          style={{
+                            fontSize: "clamp(26px, 8vw, 100px)",
+                            letterSpacing: "-0.02em",
+                            background: "linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0.6) 100%)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            backgroundClip: "text",
+                            filter: "drop-shadow(0 0 28px rgba(227,30,36,0.35))",
+                          }}
+                          initial={{ opacity: 0, y: 40, skewX: -6 }}
+                          animate={{ opacity: 1, y: 0, skewX: 0 }}
+                          transition={{ delay: 0.15 + i * 0.04, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          {ch}
+                        </motion.span>
+                      ))}
+                    </div>
+                    <div className="flex justify-center items-center">
+                      {"PHASE 2".split("").map((ch, i) => (
+                        <motion.span
+                          key={i}
+                          className="font-display font-black leading-none select-none"
+                          style={{
+                            fontSize: "clamp(26px, 8vw, 100px)",
+                            letterSpacing: "-0.02em",
+                            background: "linear-gradient(180deg, #FF3B30 0%, #E31E24 100%)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            backgroundClip: "text",
+                            filter: "drop-shadow(0 0 28px rgba(227,30,36,0.55))",
+                          }}
+                          initial={{ opacity: 0, y: 40, skewX: -6 }}
+                          animate={{ opacity: 1, y: 0, skewX: 0 }}
+                          transition={{ delay: 0.45 + i * 0.04, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          {ch === " " ? "\u00A0" : ch}
+                        </motion.span>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Glowing underline */}

@@ -337,11 +337,7 @@ export default function App() {
   ];
 
   return (
-    <div className="bg-[#070709] text-white min-h-screen selection:bg-primary-red selection:text-white flex flex-col overflow-x-hidden relative">
-
-      {/* ─── GLOBAL CONTINUOUS BACKGROUND ANIMATION (Never stops on navigation) ─── */}
-      <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-0" />
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#070709_85%)] pointer-events-none z-0" />
+    <div className="bg-[#070709] text-white min-h-screen selection:bg-primary-red selection:text-white flex flex-col overflow-x-hidden">
 
       {/* ─── NAV ─── */}
       <nav className="fixed top-0 w-full z-50 bg-[#070709]/85 backdrop-blur-2xl border-b border-white/[0.06] transition-all duration-300">
@@ -602,7 +598,13 @@ export default function App() {
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}>
 
               {/* ─── HERO ─── */}
-              <section className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden z-10">
+              <section className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden">
+
+                {/* Canvas background */}
+                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+
+                {/* Vignette overlay */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#070709_80%)] pointer-events-none z-[1]" />
 
                 {/* Center content */}
                 <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-5xl">

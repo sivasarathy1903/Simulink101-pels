@@ -169,6 +169,14 @@ export default function TaskDetailPage({
 
   const existingSubmission = submittedLinks[task.linkKey];
 
+  // Keep inputLink state in sync when submittedLinks loads asynchronously from database or localStorage
+  useEffect(() => {
+    const existing = submittedLinks[task.linkKey];
+    if (existing && typeof existing === "string") {
+      setInputLink(existing);
+    }
+  }, [submittedLinks, task.linkKey]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputLink.trim()) return;

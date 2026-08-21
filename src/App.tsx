@@ -65,21 +65,51 @@ export default function App() {
   // Which tasks are currently saving
   const [savingLink, setSavingLink] = useState<Record<string, boolean>>({});
 
-  // When team logs in, fetch their submissions from the new table
+  // When team logs in, fetch their submissions from teamService (Supabase + localStorage fallback)
   useEffect(() => {
     if (currentUser.role === "team" && currentUser.teamId) {
       teamService.getTeamSubmissions(currentUser.teamId).then(submissions => {
-        const existing = {
-          task1Link: submissions["task1Link"] || "",
-          task2Link: submissions["task2Link"] || "",
-          task3Link: submissions["task3Link"] || "",
+        const extractLink = (val: any) => {
+          if (!val) return "";
+          if (typeof val === "string") return val.trim();
+          if (typeof val === "object" && val.link && typeof val.link === "string") return val.link.trim();
+          return "";
         };
-        setDraftLinks(existing);
-        // Mark already-submitted links as confirmed
+
+        const extractTime = (val: any) => {
+          if (!val) return "";
+          if (typeof val === "object" && val.submittedAt && typeof val.submittedAt === "string") return val.submittedAt;
+          return "";
+        };
+
+        const t1 = extractLink(submissions["task1Link"] || submissions["task1"] || submissions["t1"]);
+        const t2 = extractLink(submissions["task2Link"] || submissions["task2"] || submissions["t2"]);
+        const t3 = extractLink(submissions["task3Link"] || submissions["task3"] || submissions["t3"]);
+
+        const time1 = extractTime(submissions["task1Link"] || submissions["task1"] || submissions["t1"]);
+        const time2 = extractTime(submissions["task2Link"] || submissions["task2"] || submissions["t2"]);
+        const time3 = extractTime(submissions["task3Link"] || submissions["task3"] || submissions["t3"]);
+
         const confirmed: Record<string, string> = {};
-        Object.entries(existing).forEach(([k, v]) => { if (v) confirmed[k] = v; });
+        if (t1) {
+          confirmed["task1Link"] = t1;
+          if (time1) confirmed["task1Link_submittedAt"] = time1;
+        }
+        if (t2) {
+          confirmed["task2Link"] = t2;
+          if (time2) confirmed["task2Link_submittedAt"] = time2;
+        }
+        if (t3) {
+          confirmed["task3Link"] = t3;
+          if (time3) confirmed["task3Link_submittedAt"] = time3;
+        }
+
+        setDraftLinks({ task1Link: t1, task2Link: t2, task3Link: t3 });
         setSubmittedLinks(confirmed);
       });
+    } else if (currentUser.role === "viewer") {
+      setSubmittedLinks({});
+      setDraftLinks({});
     }
   }, [currentUser.teamId, currentUser.role]);
 

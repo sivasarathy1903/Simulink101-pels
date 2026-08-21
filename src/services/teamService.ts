@@ -196,51 +196,72 @@ export const teamService = {
   async getTeamSubmissions(teamId: string): Promise<Record<string, { link: string; submittedAt?: string }>> {
     const submissionsMap: Record<string, { link: string; submittedAt?: string }> = {};
 
-    // 1. Fetch from submissions table
-    const { data: subData, error: subErr } = await supabase
-      .from("submissions")
-      .select("task_key, drive_link, updated_at, created_at")
-      .eq("team_id", teamId);
-      
-    if (!subErr && subData) {
-      subData.forEach(row => {
-        const timeVal = row.updated_at || row.created_at;
-        const subObj = { link: row.drive_link, submittedAt: timeVal };
-        submissionsMap[row.task_key] = subObj;
+    // 0. Check localStorage backup first
+    try {
+      const localBackup = localStorage.getItem(`simverse_submissions_${teamId}`);
+      if (localBackup) {
+        const parsed = JSON.parse(localBackup);
+        Object.assign(submissionsMap, parsed);
+      }
+    } catch (e) { /* ignore */ }
 
-        const num = row.task_key.includes("1") ? 1 : row.task_key.includes("2") ? 2 : row.task_key.includes("3") ? 3 : 0;
-        if (num > 0) {
-          submissionsMap[`task${num}Link`] = subObj;
-          submissionsMap[`task${num}`] = subObj;
-          submissionsMap[`t${num}`] = subObj;
-        }
-      });
-    }
+    // 1. Fetch from submissions table in Supabase
+    try {
+      const { data: subData, error: subErr } = await supabase
+        .from("submissions")
+        .select("task_key, drive_link, updated_at, created_at")
+        .eq("team_id", teamId);
+        
+      if (!subErr && subData) {
+        subData.forEach(row => {
+          const timeVal = row.updated_at || row.created_at;
+          const linkVal = (row.drive_link || "").trim();
+          if (linkVal) {
+            const subObj = { link: linkVal, submittedAt: timeVal };
+            submissionsMap[row.task_key] = subObj;
+
+            const num = row.task_key.includes("1") ? 1 : row.task_key.includes("2") ? 2 : row.task_key.includes("3") ? 3 : 0;
+            if (num > 0) {
+              submissionsMap[`task${num}Link`] = subObj;
+              submissionsMap[`task${num}`] = subObj;
+              submissionsMap[`t${num}`] = subObj;
+            }
+          }
+        });
+      }
+    } catch (e) { /* ignore */ }
 
     // 2. Fetch from team metrics row for backup
-    const { data: teamData } = await supabase
-      .from("teams")
-      .select("metrics, last_updated")
-      .eq("id", teamId)
-      .single();
+    try {
+      const { data: teamData } = await supabase
+        .from("teams")
+        .select("metrics, last_updated")
+        .eq("id", teamId)
+        .single();
 
-    if (teamData?.metrics) {
-      const m = teamData.metrics;
-      [1, 2, 3].forEach(num => {
-        const keys = [`task${num}Link`, `task${num}`, `t${num}`, `t${num}_link`, ...(num === 1 ? ["driveLink"] : [])];
-        for (const k of keys) {
-          if (m[k] && typeof m[k] === "string" && (m[k] as string).trim()) {
-            const linkVal = (m[k] as string).trim();
-            const timeVal = (m[`${k}_submittedAt`] as string) || (m[`task${num}Link_submittedAt`] as string) || (m[`task${num}_submittedAt`] as string) || (m[`t${num}_submittedAt`] as string) || teamData.last_updated;
-            const subObj = { link: linkVal, submittedAt: timeVal };
-            submissionsMap[`task${num}Link`] = subObj;
-            submissionsMap[`task${num}`] = subObj;
-            submissionsMap[`t${num}`] = subObj;
-            break;
+      if (teamData?.metrics) {
+        const m = teamData.metrics;
+        [1, 2, 3].forEach(num => {
+          const keys = [`task${num}Link`, `task${num}`, `t${num}`, `t${num}_link`, ...(num === 1 ? ["driveLink"] : [])];
+          for (const k of keys) {
+            if (m[k] && typeof m[k] === "string" && (m[k] as string).trim()) {
+              const linkVal = (m[k] as string).trim();
+              const timeVal = (m[`${k}_submittedAt`] as string) || (m[`task${num}Link_submittedAt`] as string) || (m[`task${num}_submittedAt`] as string) || (m[`t${num}_submittedAt`] as string) || teamData.last_updated;
+              const subObj = { link: linkVal, submittedAt: timeVal };
+              submissionsMap[`task${num}Link`] = subObj;
+              submissionsMap[`task${num}`] = subObj;
+              submissionsMap[`t${num}`] = subObj;
+              break;
+            }
           }
-        }
-      });
-    }
+        });
+      }
+    } catch (e) { /* ignore */ }
+
+    // Save latest to localStorage cache
+    try {
+      localStorage.setItem(`simverse_submissions_${teamId}`, JSON.stringify(submissionsMap));
+    } catch (e) { /* ignore */ }
 
     return submissionsMap;
   },
@@ -249,30 +270,45 @@ export const teamService = {
     const nowIso = new Date().toISOString();
     const taskNum = taskKey.includes("1") ? 1 : taskKey.includes("2") ? 2 : taskKey.includes("3") ? 3 : 1;
 
-    // 1. Save to submissions table
-    const { error: subErr } = await supabase
-      .from("submissions")
-      .upsert({
-        team_id: teamId,
-        task_key: taskKey,
-        drive_link: driveLink,
-        updated_at: nowIso,
-      }, { onConflict: "team_id,task_key" });
+    // 1. Update localStorage cache instantly
+    try {
+      const cacheKey = `simverse_submissions_${teamId}`;
+      const existingStr = localStorage.getItem(cacheKey);
+      const existing = existingStr ? JSON.parse(existingStr) : {};
+      const subObj = { link: driveLink, submittedAt: nowIso };
+      existing[taskKey] = subObj;
+      existing[`task${taskNum}Link`] = subObj;
+      existing[`task${taskNum}`] = subObj;
+      existing[`t${taskNum}`] = subObj;
+      localStorage.setItem(cacheKey, JSON.stringify(existing));
+    } catch (e) { /* ignore */ }
 
-    if (subErr) {
-      console.warn("Submissions table write note:", subErr.message);
-    }
+    // 2. Save to submissions table
+    try {
+      const { error: subErr } = await supabase
+        .from("submissions")
+        .upsert({
+          team_id: teamId,
+          task_key: taskKey,
+          drive_link: driveLink,
+          updated_at: nowIso,
+        }, { onConflict: "team_id,task_key" });
 
-    // 2. Also update team metrics in teams table (saves all alias keys!)
-    const { data: teamRow } = await supabase
-      .from("teams")
-      .select("metrics")
-      .eq("id", teamId)
-      .single();
+      if (subErr) {
+        console.warn("Submissions table write note:", subErr.message);
+      }
+    } catch (e) { /* ignore */ }
 
-    if (teamRow) {
+    // 3. Also update team metrics in teams table (saves all alias keys!)
+    try {
+      const { data: teamRow } = await supabase
+        .from("teams")
+        .select("metrics")
+        .eq("id", teamId)
+        .single();
+
       const updatedMetrics = {
-        ...(teamRow.metrics || {}),
+        ...(teamRow?.metrics || {}),
         [taskKey]: driveLink,
         [`task${taskNum}Link`]: driveLink,
         [`task${taskNum}`]: driveLink,
@@ -291,8 +327,8 @@ export const teamService = {
         .eq("id", teamId);
 
       if (teamErr) {
-        console.error("Error updating team metrics submission:", teamErr.message);
+        console.warn("Teams metrics update note:", teamErr.message);
       }
-    }
+    } catch (e) { /* ignore */ }
   }
 };

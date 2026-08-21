@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { Team, TeamMetrics } from "../types";
+import { INITIAL_TEAMS } from "../data";
 
 export interface SupabaseTeamRow {
   id: string;
@@ -71,17 +72,27 @@ export function mapRowToTeam(row: SupabaseTeamRow, index: number): Team {
 
 export const teamService = {
   async getTeams(): Promise<Team[]> {
-    const { data, error } = await supabase
-      .from("teams")
-      .select("*")
-      .order("total_points", { ascending: false });
+    let supabaseTeams: Team[] = [];
+    try {
+      const { data, error } = await supabase
+        .from("teams")
+        .select("*")
+        .order("total_points", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching teams:", error);
-      throw error;
+      if (!error && data) {
+        supabaseTeams = (data as SupabaseTeamRow[]).map((row, index) => mapRowToTeam(row, index));
+      }
+    } catch (err) {
+      console.warn("Could not fetch teams from Supabase, falling back to INITIAL_TEAMS:", err);
     }
 
-    return (data as SupabaseTeamRow[]).map((row, index) => mapRowToTeam(row, index));
+    const existingNames = new Set(supabaseTeams.map(t => t.name.trim().toUpperCase()));
+    const missingFromSupabase = INITIAL_TEAMS.filter(t => !existingNames.has(t.name.trim().toUpperCase()));
+
+    const combined = [...supabaseTeams, ...missingFromSupabase];
+    combined.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
+
+    return combined.map((t, index) => ({ ...t, rank: index + 1 }));
   },
 
   async createTeam(team: Partial<Team>): Promise<Team | null> {
@@ -153,20 +164,32 @@ export const teamService = {
   },
 
   async loginTeam(name: string, password: string): Promise<Team | null> {
-    const { data, error } = await supabase
-      .from("teams")
-      .select("*")
-      .ilike("name", name)
-      .single();
+    const cleanName = name.trim().toUpperCase();
 
-    if (error || !data) {
-      return null;
+    // 1. Check Supabase
+    try {
+      const { data, error } = await supabase
+        .from("teams")
+        .select("*")
+        .ilike("name", cleanName)
+        .single();
+
+      if (!error && data) {
+        const teamRow = data as SupabaseTeamRow;
+        if (teamRow.metrics?.password === password) {
+          return mapRowToTeam(teamRow, 0);
+        }
+      }
+    } catch {
+      // Fallthrough
     }
 
-    const teamRow = data as SupabaseTeamRow;
-    if (teamRow.metrics?.password === password) {
-      return mapRowToTeam(teamRow, 0);
+    // 2. Check INITIAL_TEAMS fallback
+    const fallbackTeam = INITIAL_TEAMS.find(t => t.name.trim().toUpperCase() === cleanName);
+    if (fallbackTeam && fallbackTeam.metrics?.password === password) {
+      return fallbackTeam;
     }
+
     return null;
   },
 

@@ -205,16 +205,16 @@ export const teamService = {
       }
     } catch (e) { /* ignore */ }
 
-    // 1. Fetch from submissions table in Supabase
+    // 1. Fetch from submissions table in Supabase (using exact column name submitted_at!)
     try {
       const { data: subData, error: subErr } = await supabase
         .from("submissions")
-        .select("task_key, drive_link, updated_at, created_at")
+        .select("task_key, drive_link, submitted_at")
         .eq("team_id", teamId);
         
       if (!subErr && subData) {
         subData.forEach(row => {
-          const timeVal = row.updated_at || row.created_at;
+          const timeVal = row.submitted_at;
           const linkVal = (row.drive_link || "").trim();
           if (linkVal) {
             const subObj = { link: linkVal, submittedAt: timeVal };
@@ -266,6 +266,31 @@ export const teamService = {
     return submissionsMap;
   },
 
+  async getAllSubmissions(): Promise<Record<string, Record<string, { link: string; submittedAt?: string }>>> {
+    const result: Record<string, Record<string, { link: string; submittedAt?: string }>> = {};
+    try {
+      const { data, error } = await supabase
+        .from("submissions")
+        .select("team_id, task_key, drive_link, submitted_at");
+
+      if (!error && data) {
+        data.forEach(row => {
+          if (!result[row.team_id]) result[row.team_id] = {};
+          const subObj = { link: row.drive_link, submittedAt: row.submitted_at };
+          result[row.team_id][row.task_key] = subObj;
+
+          const num = row.task_key.includes("1") ? 1 : row.task_key.includes("2") ? 2 : row.task_key.includes("3") ? 3 : 0;
+          if (num > 0) {
+            result[row.team_id][`task${num}Link`] = subObj;
+            result[row.team_id][`task${num}`] = subObj;
+            result[row.team_id][`t${num}`] = subObj;
+          }
+        });
+      }
+    } catch (e) { /* ignore */ }
+    return result;
+  },
+
   async updateTeamSubmission(teamId: string, taskKey: string, driveLink: string): Promise<void> {
     const nowIso = new Date().toISOString();
     const taskNum = taskKey.includes("1") ? 1 : taskKey.includes("2") ? 2 : taskKey.includes("3") ? 3 : 1;
@@ -283,7 +308,7 @@ export const teamService = {
       localStorage.setItem(cacheKey, JSON.stringify(existing));
     } catch (e) { /* ignore */ }
 
-    // 2. Save to submissions table
+    // 2. Save to submissions table in Supabase using exact submitted_at column!
     try {
       const { error: subErr } = await supabase
         .from("submissions")
@@ -291,11 +316,13 @@ export const teamService = {
           team_id: teamId,
           task_key: taskKey,
           drive_link: driveLink,
-          updated_at: nowIso,
+          submitted_at: nowIso,
         }, { onConflict: "team_id,task_key" });
 
       if (subErr) {
         console.warn("Submissions table write note:", subErr.message);
+      } else {
+        console.log("Successfully saved submission link to Supabase for team:", teamId);
       }
     } catch (e) { /* ignore */ }
 
@@ -321,14 +348,10 @@ export const teamService = {
         [`t${taskNum}_submittedAt`]: nowIso,
       };
 
-      const { error: teamErr } = await supabase
+      await supabase
         .from("teams")
         .update({ metrics: updatedMetrics, last_updated: "Just now" })
         .eq("id", teamId);
-
-      if (teamErr) {
-        console.warn("Teams metrics update note:", teamErr.message);
-      }
     } catch (e) { /* ignore */ }
   }
 };

@@ -388,25 +388,8 @@ export const INITIAL_TEAMS: Team[] = [
       ]
   },
   {
-      "id": "4c32b79f-64b5-4030-9c3b-83f13513795a",
-      "rank": 24,
-      "name": "GO2HEAVEN",
-      "institution": "ECE - 2",
-      "totalPoints": 0,
-      "status": "Registered",
-      "metrics": {
-          "password": "7VGDK3",
-          "t1_topology": 0
-      },
-      "lastUpdated": "Just now",
-      "runHistory": [],
-      "tags": [
-          "Kishore Ram S (ECE - 2)"
-      ]
-  },
-  {
       "id": "team-42",
-      "rank": 25,
+      "rank": 24,
       "name": "Jarvis",
       "institution": "ECE - 3",
       "totalPoints": 0,
@@ -423,7 +406,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-55",
-      "rank": 26,
+      "rank": 25,
       "name": "Kairova",
       "institution": "CSE - 2",
       "totalPoints": 0,
@@ -440,7 +423,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-54",
-      "rank": 27,
+      "rank": 26,
       "name": "Matlab Mayavigal",
       "institution": "ECE - 2",
       "totalPoints": 0,
@@ -457,7 +440,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-41",
-      "rank": 28,
+      "rank": 27,
       "name": "Matrixes",
       "institution": "ECE - 2",
       "totalPoints": 0,
@@ -473,7 +456,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-36",
-      "rank": 29,
+      "rank": 28,
       "name": "MATRIXMinds",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -490,7 +473,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-44",
-      "rank": 30,
+      "rank": 29,
       "name": "No more mutants",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -507,7 +490,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-26",
-      "rank": 31,
+      "rank": 30,
       "name": "NOVA",
       "institution": "ECE - 3",
       "totalPoints": 0,
@@ -524,7 +507,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-51",
-      "rank": 32,
+      "rank": 31,
       "name": "Ohmies for Life",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -541,7 +524,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-46",
-      "rank": 33,
+      "rank": 32,
       "name": "okaynga",
       "institution": "BME - 2",
       "totalPoints": 0,
@@ -558,7 +541,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-65",
-      "rank": 34,
+      "rank": 33,
       "name": "Oscorp",
       "institution": "MECH - 2",
       "totalPoints": 0,
@@ -575,7 +558,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-33",
-      "rank": 35,
+      "rank": 34,
       "name": "Pairfect",
       "institution": "BME - 3",
       "totalPoints": 0,
@@ -592,7 +575,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-56",
-      "rank": 36,
+      "rank": 35,
       "name": "Peanut Butter",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -609,7 +592,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-67",
-      "rank": 37,
+      "rank": 36,
       "name": "Pixel Pulse",
       "institution": "CSE - 2",
       "totalPoints": 0,
@@ -626,7 +609,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-63",
-      "rank": 38,
+      "rank": 37,
       "name": "Power Nexus",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -643,7 +626,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-37",
-      "rank": 39,
+      "rank": 38,
       "name": "Power Rangers",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -660,7 +643,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "bf531005-c7ab-4568-8117-60ca0ec55c0a",
-      "rank": 40,
+      "rank": 39,
       "name": "PULSE",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -677,7 +660,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-28",
-      "rank": 41,
+      "rank": 40,
       "name": "PulseForge",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -694,7 +677,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "f74fbc6b-3a23-43eb-9caf-3192dbfd26d9",
-      "rank": 42,
+      "rank": 41,
       "name": "RINNAH & KEERTANA",
       "institution": "BME - 2",
       "totalPoints": 0,
@@ -711,7 +694,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "218554c5-9352-422b-afe2-83aef6fcb0f5",
-      "rank": 43,
+      "rank": 42,
       "name": "ROCKERS",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -728,7 +711,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-25",
-      "rank": 44,
+      "rank": 43,
       "name": "Royal super simulators",
       "institution": "BME - 2",
       "totalPoints": 0,
@@ -745,7 +728,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-52",
-      "rank": 45,
+      "rank": 44,
       "name": "S",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -761,7 +744,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-29",
-      "rank": 46,
+      "rank": 45,
       "name": "Sahana S",
       "institution": "ECE - 2",
       "totalPoints": 0,
@@ -778,7 +761,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-23",
-      "rank": 47,
+      "rank": 46,
       "name": "Sana and Sugaa",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -795,7 +778,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "94a1f9cb-026e-416b-9ccc-a44ce3d8fea0",
-      "rank": 48,
+      "rank": 47,
       "name": "SCRATCH CARD",
       "institution": "BME - 2",
       "totalPoints": 0,
@@ -812,7 +795,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-50",
-      "rank": 49,
+      "rank": 48,
       "name": "Sharp Minds",
       "institution": "ECE - 2",
       "totalPoints": 0,
@@ -829,7 +812,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "376bf668-688a-4893-b579-f77685e034b8",
-      "rank": 50,
+      "rank": 49,
       "name": "SHINOBIS",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -846,7 +829,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "11e572c6-7001-4427-9099-dd4674645cd5",
-      "rank": 51,
+      "rank": 50,
       "name": "SIGNAL SQUAD",
       "institution": "ECE - 2ND",
       "totalPoints": 0,
@@ -863,7 +846,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "58d22174-03e5-4416-859d-8e250b1a6c5e",
-      "rank": 52,
+      "rank": 51,
       "name": "SIM",
       "institution": "ECE - 2",
       "totalPoints": 0,
@@ -880,7 +863,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-47",
-      "rank": 53,
+      "rank": 52,
       "name": "Simcy",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -897,7 +880,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "fa04943f-25eb-421d-bd90-bbdee7482d1e",
-      "rank": 54,
+      "rank": 53,
       "name": "SIMDIMSUM",
       "institution": "EEE - 4",
       "totalPoints": 0,
@@ -913,7 +896,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-57",
-      "rank": 55,
+      "rank": 54,
       "name": "Simmates",
       "institution": "ECE - 2",
       "totalPoints": 0,
@@ -930,7 +913,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-64",
-      "rank": 56,
+      "rank": 55,
       "name": "Simspace",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -946,7 +929,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-34",
-      "rank": 57,
+      "rank": 56,
       "name": "Simu Techiezz",
       "institution": "ECE - 2",
       "totalPoints": 0,
@@ -963,7 +946,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-21",
-      "rank": 58,
+      "rank": 57,
       "name": "Simvengers",
       "institution": "BME - 2",
       "totalPoints": 0,
@@ -980,7 +963,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "782fe292-9144-48e2-b866-d0d4186d9bb0",
-      "rank": 59,
+      "rank": 58,
       "name": "SPARKS",
       "institution": "CSE - 2ND",
       "totalPoints": 0,
@@ -997,7 +980,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-40",
-      "rank": 60,
+      "rank": 59,
       "name": "Steady State",
       "institution": "ECE - 2",
       "totalPoints": 0,
@@ -1014,7 +997,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-27",
-      "rank": 61,
+      "rank": 60,
       "name": "Supernova",
       "institution": "BME - 2",
       "totalPoints": 0,
@@ -1031,7 +1014,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-48",
-      "rank": 62,
+      "rank": 61,
       "name": "Sync logic",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -1048,7 +1031,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-35",
-      "rank": 63,
+      "rank": 62,
       "name": "Sytrus",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -1065,7 +1048,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-30",
-      "rank": 64,
+      "rank": 63,
       "name": "TeamX",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -1081,7 +1064,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-58",
-      "rank": 65,
+      "rank": 64,
       "name": "Tokyo Drifters",
       "institution": "ECE - 3",
       "totalPoints": 0,
@@ -1098,7 +1081,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-22",
-      "rank": 66,
+      "rank": 65,
       "name": "Twinvolt",
       "institution": "EEE - 3",
       "totalPoints": 0,
@@ -1115,7 +1098,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-32",
-      "rank": 67,
+      "rank": 66,
       "name": "Two phase",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -1132,7 +1115,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "team-68",
-      "rank": 68,
+      "rank": 67,
       "name": "Vasu n Saravanan",
       "institution": "EEE - 2",
       "totalPoints": 0,
@@ -1149,7 +1132,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "063e9de6-5f3a-4300-a117-d7f63b2bd295",
-      "rank": 69,
+      "rank": 68,
       "name": "VDOSIM",
       "institution": "ECE - 4",
       "totalPoints": 0,
@@ -1166,7 +1149,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
       "id": "179f28a9-53e7-4499-bab8-6a446ef7685b",
-      "rank": 70,
+      "rank": 69,
       "name": "VOLTVANGUARD",
       "institution": "EEE - 3",
       "totalPoints": 0,
